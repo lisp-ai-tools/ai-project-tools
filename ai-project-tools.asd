@@ -25,7 +25,8 @@
                :closer-mop
                :fset
                :functional-trees
-               :local-time)
+               :local-time
+               :ironclad)
   :components ((:module "src/core"
                 :components
                 ((:file "package")
@@ -61,5 +62,5 @@
   :perform (test-op (op c)
                     (uiop:symbol-call
                      :fiveam :run!
-                     (uiop:find-symbol* :ai-project-tools/tests-suite
-                                        :ai-project-tools/tests))))
+                     (uiop:find-symbol* :ai-project-tools/core-tests-suite
+                                        :ai-project-tools/core-tests))))

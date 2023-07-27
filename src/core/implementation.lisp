@@ -102,13 +102,13 @@
     session))
 
 ;; Basic memory-metadata-store implementation
-(defmethod lookup ((store simple-memory-metadata-store) key)
-  (gethash key (store store)))
+(defmethod lookup ((store simple-memory-metadata-store) key &rest args &key default)
+  (gethash key (store store) default))
 
 (defmethod (setf lookup) (value (store simple-memory-metadata-store) key)
   (setf (gethash key (store store)) value))
 
-(defmethod remove-entry ((store metadata-store) key)
+(defmethod discard ((store metadata-store) key)
   (remhash key (store store)))
 
 (defmethod clear ((store metadata-store))
@@ -123,15 +123,15 @@
          (path-from-root (nreverse (cons key names-from-root))))
     (reduce (lambda (a b) (concatenate 'string a delimiter b)) path-from-root)))
 
-(defmethod lookup ((store memory-scoped-metadata-store) (key-string string))
+(defmethod lookup ((store memory-scoped-metadata-store) (key-string string) &rest args &key default)
   (let ((scoped-key (scoped-key-name store key-string)))
-   (gethash scoped-key (store store)) ))
+   (gethash scoped-key (store store)) default))
 
 (defmethod (setf lookup) (value (store memory-scoped-metadata-store) (key-string string))
   (let ((scoped-key (scoped-key-name store key-string)))
     (setf (gethash scoped-key (store store)) value)))
 
-(defmethod remove-entry ((store memory-scoped-metadata-store) (key-string string))
+(defmethod discard ((store memory-scoped-metadata-store) (key-string string))
   (let ((scoped-key (scoped-key-name store key-string)))
     (remhash scoped-key (store store))))
 
@@ -144,19 +144,15 @@
   (declare (ignore args))
   (get-default-system-configuration))
 
-(defmethod lookup-project ((designator (eql :default)) &rest args)
+(defmethod %lookup-project ((app application) (designator (eql :default)) &rest args)
   (declare (ignore args))
-  (let ((configuration (get-default-system-configuration)))
-     (if configuration
-         (project configuration)
-         (error "No default configuration found."))))
+  (let ((key (concatenate 'string "/runtime/projects/" (string-downcase (string :default)))))
+    (lookup (metadata-store app) key)))
 
-(defmethod lookup-session ((designator (eql :default)) &rest args)
+(defmethod %lookup-session ((app application) (designator (eql :default)) &rest args)
   (declare (ignore args))
-  (let ((configuration (get-default-system-configuration)))
-     (if configuration
-         (session configuration)
-         (error "No default configuration found."))))
+  (let ((key (concatenate 'string "/runtime/sessions/" (string-downcase (string :default)))))
+    (lookup (metadata-store app) key)))
 
 ;; This takes care of the registration of the system configuration, and setting default if requested.
 (defmethod load-system-configuration :around ((designator t) &rest args &key (set-default nil))
@@ -190,10 +186,10 @@
                  :name "Simple in-memory system configuration."
                  :description "A simple in-memory system configuration that does not persist."
                  :root-metadata-store (make-instance 'memory-scoped-metadata-store
-                                     :name "/root"
-                                     :store (make-hash-table :test #'equal)
-                                     :parent nil
-                                     :schema (list :fake t))))
+                                                     :name "/root"
+                                                     :store (make-hash-table :test #'equal)
+                                                     :parent nil
+                                                     :schema (list :fake t))))
          (project (%make-project config project-designator))
          (session (%make-session config session-designator :project project)))
     config))
