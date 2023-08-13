@@ -6,3 +6,7 @@
 
 (test ai-project-tools/tests-suite-exists
   (is-true t))
+
+;; (ql:quickload '(:ai-project-tools/tests))
+;; (run! 'ai-project-tools/tests-suite-exists)
+;; (run! 'ai-project-tools/tests-suite)

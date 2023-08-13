@@ -236,3 +236,12 @@
 (defgeneric run (runnable &rest args)
   (:documentation "Runs the runnable object."))
 
+;;;; stepped-runnable protocol
+(defgeneric stepped-runnable-p (stepped-runnable)
+  (:documentation "Returns true if the object is stepped-runnable."))
+
+(defmethod stepped-runnable-p ((stepped-runnable stepped-runnable))
+    t)
+
+(defgeneric run-step (runnable &rest args)
+  (:documentation "Runs one step in the runnable object."))

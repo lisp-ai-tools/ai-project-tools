@@ -1,14 +1,69 @@
-(defpackage :ai-project-tools/prompts-tests
+(defpackage :ai-project-tools/core-tests
   (:use #:cl #:fiveam)
-  #+(or)(:local-nicknames
-   (:short :long-pkg-name))
+  (:local-nicknames
+   (:core :ai-project-tools/core))
   (:import-from #:ai-project-tools/core
                 ;; conditions
+                #:immediate-task-stop
 
                 ;; classes
+                #:application
+                #:system-configuration
+                #:simple-in-memory-system-configuration
+                #:metadata-store
+                #:simple-memory-metadata-store
+                #:scoped-metadata-store
+                #:memory-scoped-metadata-store
+                #:project
+                #:session
                 ;; accessors
+                #:root-metadata-store
+                #:designator
+                #:configuration
+                #:sessions
+                ;; #:metadata-store
+                #:execution-events
+                #:store
+                #:scope-delimeter
+
+                #:input-keys
+                #:output-keys
+                #:inputs
+                #:outputs
+                #:execution-node
+
+                #:parent
+
+                #:start-time
+                #:end-time
+                #:duration
+
+                #:session
+                #:project
+
+                #:role
+                #:name
+                #:description
+                #:state
+                #:notes
+                #:data
+                #:metadata
+
                 ;; functions
-                ;; )
+                #:get-system-configuration
+                #:get-system-configuration-registry
+                #:register-system-configuration
+                #:register-system-components
+                #:remove-system-configuration
+                #:clear-system-configuration-registry
+                #:get-default-system-configuration
+                #:get-current-system-configuration
+                #:get-current-project
+                #:get-current-session
+                #:lookup-system-configuration
+                #:lookup-project
+                #:lookup-session
+                )
   (:import-from #:ai-project-tools/tests
                 #:ai-project-tools/tests-suite)
   (:import-from #:fiveam

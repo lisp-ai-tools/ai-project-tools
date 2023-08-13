@@ -13,13 +13,14 @@
                                :parent nil
                                :schema (list :fake :schema)
                                :store (make-hash-table :test #'equal)))
+         (project-store (make-instance 'memory-scoped-metadata-store
+                                       :name "/ephemeral-chat-project/"
+                                       :parent store
+                                       :schema (list :fake :schema)))
          (project (make-instance 'project
                                  :name "ephemeral-chat-project"
                                  :description "Project for a quick-n-dirty chat app for testing in the REPL."
-                                 :metadata-store (make-instance 'memory-scoped-metadata-store
-                                                                :name "/ephemeral-chat-project/"
-                                                                :parent store
-                                                                :schema (list :fake :schema))))
+                                 :metadata-store project-store))
          (app (make-instance 'application
                              :name "ephemeral-chat-app"
                              :description "Just a quick-n-dirty chat app for testing in the REPL."

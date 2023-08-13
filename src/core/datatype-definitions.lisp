@@ -75,7 +75,11 @@ which may be more nodes, or other values. If the parent slot is nil, this is a r
 
 
 ;;;; ======= Core system runtime execution objects. The verbs. =======
-(defclass runnable () ())
+(defclass runnable () ()
+  (:documentation "Marker base class for executions"))
+
+(defclass stepped-runnable () ()
+  (:documentation "Marker class for an execution that can be broken down into steps."))
 
 (defclass timed-runnable (timed runnable) ()
   (:documentation
@@ -180,15 +184,14 @@ a single,queryable, and typed category. Run-contexts can be used to represent
 sets of metadata. An example of a run-context would be a run of an LLM chat
 session, Q&A + retrieval, or machine learning pipeline."))
 
-(defclass session (has-name has-description has-notes timed
+(defclass session (has-name has-description has-state has-notes timed
                    belongs-to-project run-context)
   ((%metadata-store :initarg :metadata-store :accessor metadata-store :type scoped-metadata-store)))
 
 (defclass project (has-name has-description has-notes)
   ((%sessions :initarg :sessions :accessor sessions :initform nil
               :documentation "The sessions/run-contexts that belong to this project.")
-   (%metadata-store :initarg :metadata-store :accessor metadata-store :type scoped-metadata-store)
-   (%root-directory :initarg :root-directory :accessor root-directory))
+   (%metadata-store :initarg :metadata-store :accessor metadata-store :type scoped-metadata-store))
    (:documentation "Container for all resources and activities used to attain a goal."))
 
 (defclass system-configuration (configuration-set has-name has-description)

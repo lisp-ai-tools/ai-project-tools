@@ -7,6 +7,8 @@
   (:export
    ;; variables
    *ai-project-tools-version*
+   *current-application*
+   *current-system-configuration*
    *current-project*
    *current-session*
 
@@ -65,8 +67,8 @@
    #:children
    #:input-keys
    #:output-keys
-   #:input-artifacts
-   #:output-artifacts
+   #:inputs
+   #:outputs
    #:execution-node
    #:runs
 
