@@ -101,6 +101,10 @@
     (log:info "Created ad-hoc non-persistent in-memory session: ~a." session)
     session))
 
+(defmethod initialize-instance :after ((session session) &key project)
+  (unless (null project)
+    (setf (sessions project) (pushnew (sessions project) session))))
+
 ;; Basic memory-metadata-store implementation
 (defmethod lookup ((store simple-memory-metadata-store) key &rest args &key default)
   (gethash key (store store) default))
@@ -120,7 +124,7 @@
   (declare (ignorable name store schema))
   (unless (null parent)
     ;; (fset:insert (ft:children parent) (fset:size parent) scoped-store)
-    ))
+    (setf (children parent) (pushnew (children parent) scoped-store))))
 
 (defmethod scoped-key-name ((store scoped-metadata-store) (key string)
                             &rest args &key (delimiter "/"))

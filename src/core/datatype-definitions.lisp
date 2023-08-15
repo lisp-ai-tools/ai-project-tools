@@ -2,11 +2,16 @@
 
 ;;;; ======= Base mixin/concept classes. =======
 (defclass has-data ()
-  ((%data :accessor data :initarg :data :initform nil
-          :documentation "Contains arbitrary data")))
+  ((%data
+    :initarg :data
+    :initform nil
+    :accessor data
+    :documentation "Contains arbitrary data")))
 
 (defclass has-metadata ()
-  ((%metadata :initarg :metadata :accessor metadata))
+  ((%metadata
+    :initarg :metadata
+    :accessor metadata))
   (:documentation "Base class for all objects that have metadata."))
 
 (defclass has-notes ()
@@ -14,37 +19,55 @@
   (:documentation "Base class for all objects that have arbitrary notes."))
 
 (defclass has-state ()
-  ((%state :initarg :state :accessor state))
+  ((%state
+    :initarg :state
+    :accessor state))
   (:documentation
    "Base class for all objects that have a state. Distinction between having data is
 that state is more specific data about the owning object."))
 
 (defclass has-name ()
-  ((%name :initarg :name :accessor name))
+  ((%name
+    :initarg :name
+    :accessor name))
   (:documentation "Base class for all objects that have a name."))
 
 (defclass has-description ()
-  ((%description :initarg :description :accessor description))
+  ((%description
+    :initarg :description
+    :accessor description))
   (:documentation "Base class for all objects that have a description."))
 
 (defclass has-role ()
-  ((%role :initarg :role :accessor role))
+  ((%role
+    :initarg :role
+    :accessor role))
   (:documentation "Base class for all objects that have a role."))
 
 (defclass belongs-to-project ()
-  ((%project :initarg :project :accessor project))
+  ((%project
+    :initarg :project
+    :accessor project))
   (:documentation "Base class for all objects that belong to a project."))
 
 (defclass belongs-to-session ()
-  ((%session :initarg :session :accessor session))
+  ((%session
+    :initarg :session
+    :accessor session))
   (:documentation
    "Base class for all objects that belong to a session (which in turn, belongs to a
 project)."))
 
 (defclass timed ()
-  ((%start-time :initarg :start-time :accessor start-time)
-   (%end-time :initarg :end-time :accessor end-time)
-   (%duration :initarg :duration :accessor duration)
+  ((%start-time
+    :initarg :start-time
+    :accessor start-time)
+   (%end-time
+    :initarg :end-time
+    :accessor end-time)
+   (%duration
+    :initarg :duration
+    :accessor duration)
    ;; (%time-units :initarg :time-units :accessor time-units)
    )
   (:documentation
@@ -56,21 +79,23 @@ and duration."))
    "Base marker class for our system nodes."))
 
 (defclass simple-leaf-node (node)
-  ((%parent :initarg :parent
-            :initform nil
-            :accessor parent
-            :documentation "The parent of the node, if any."))
+  ((%parent
+    :initarg :parent
+    :initform nil
+    :accessor parent
+    :documentation "The parent of the node, if any."))
   (:documentation
    "Base marker class for all simple leaf nodes. Nodes that are not composites. They
 contain no children."))
 
 (defclass tree-node (simple-leaf-node)
-  ((children :initarg :children
-             :initform ()
-             :accessor children
-             :type list
-             :documentation
-             "The list of children of the node,
+  ((children
+    :initarg :children
+    :initform ()
+    :accessor children
+    :type list
+    :documentation
+    "The list of children of the node,
 which may be more nodes, or other values. If the parent slot is nil, this is a root node."))
   (:documentation "Base class for all parent nodes. Nodes that are composites."))
 
@@ -119,17 +144,40 @@ deployment. The product of an execution is one or more artifact."))
 scope of their execution/run encmpasses that of their children as well."))
 
 (defclass execution-event (has-data has-metadata belongs-to-session timed)
-  ((%input-keys :initarg :input-keys :accessor input-keys)
-   (%output-keys :initarg :output-keys :accessor output-keys)
-   (%inputs :initarg :inputs :accessor inputs
-            :initform (error "Must supply one or more input artifacts"))
-   (%outputs :initarg :outputs :accessor outputs)
-   (%execution-node :initarg :execution-node :accessor execution-node))
-  (:documentation
-   "An execution-event describes the relationship between artifacts and executions. Each
+  ((%input-keys 
+    :initarg :input-keys 
+    :initform nil
+    :accessor input-keys
+    :type t
+    :documentation "Names of expected input artifacts.")
+   (%output-keys 
+    :initarg :output-keys 
+    :initform nil
+    :accessor output-keys
+    :type t
+    :documentation "Names of produced output artifacts.")
+   (%inputs 
+    :initarg :inputs 
+    :initform (error "Must supply one or more input artifacts")
+    :accessor inputs
+    :type t
+    :documentation "")
+   (%outputs 
+    :initarg :outputs 
+    :initform nil
+    :accessor outputs
+    :type t
+    :documentation "")
+   (%execution-node 
+    :initarg :execution-node 
+    :initform nil
+    :accessor execution-node
+    :type t
+    :documentation ""))
+  (:documentation "An execution-event describes the relationship between artifacts and executions. Each
 artifact can be produced by an execution and consumed by other executions.
 Events help you to determine the provenance of artifacts in their ML workflows
-by chaining together artifacts and executions.An event is a record of an action
+by chaining together artifacts and executions. An event is a record of an action
 that occurred at a particular time and date. An event is also an edge in a graph
 of artifacts and executions."))
 
@@ -146,9 +194,11 @@ is only performed on matching fields between the resource and the
 MetadataSchema."))
 
 (defclass metadata-store ()
-  ((%schema :initarg :schema :accessor schema
-            :initform (error "Must supply a metadata schema")
-            :documentation "The metadata schema for this store."))
+  ((%schema
+    :initarg :schema
+    :initform (error "Must supply a metadata schema")
+    :accessor schema
+    :documentation "The metadata schema for this store."))
   (:documentation
    "A metadata store is a database that stores metadata for artifacts, executions,
 events, and contexts. A MetadataStore is the top-level container for metadata
@@ -157,15 +207,20 @@ an organization uses one shared MetadataStore for metadata resources within each
 project."))
 
 (defclass simple-memory-metadata-store (metadata-store)
-  ((store :initarg :store :accessor store
-           :initform (make-hash-table :test #'equal)))
+  ((store
+    :initarg :store
+    :initform (make-hash-table :test #'equal)
+    :accessor store))
   (:documentation
    "A simple in-memory metadata store that stores metadata in a hash table."))
 
 (defclass scoped-metadata-store (has-name metadata-store tree-node)
-  ((%scope-delimeter :initarg :scope-delimeter :accessor scope-delimeter
-                     :initform "/"
-                     :documentation "The scope delimeter for this store."))
+  ((%scope-delimeter
+    :initarg :scope-delimeter
+    :initform "/"
+    :accessor scope-delimeter
+    :documentation
+    "The scope delimeter for this store."))
   (:documentation
    "A scoped metadata store is a metadata store that is provides a scope or
 namespace for the metadata resources within it."))
@@ -178,9 +233,12 @@ metadata in a hash table, using the chain of parent node names as a scoped key
 for each value."))
 
 (defclass run-context ()
-  ((%execution-events :initarg :execution-events :accessor execution-events :initform ()
-          :documentation
-          "The execution events (executions, artifacts, and events) that belong to this session."))
+  ((%execution-events
+    :initarg :execution-events
+    :initform ()
+    :accessor execution-events
+    :documentation
+    "The execution events (executions, artifacts, and events) that belong to this session."))
   (:documentation
    "A run-context is used to group graphs of artifacts and executions together under
 a single,queryable, and typed category. Run-contexts can be used to represent
@@ -189,26 +247,49 @@ session, Q&A + retrieval, or machine learning pipeline."))
 
 (defclass session (has-name has-description has-state has-notes timed
                    belongs-to-project run-context)
-  ((%metadata-store :initarg :metadata-store :accessor metadata-store :type scoped-metadata-store)))
+  ((%metadata-store
+    :initarg :metadata-store
+    :accessor metadata-store
+    :type scoped-metadata-store)))
 
 (defclass project (has-name has-description has-notes)
-  ((%sessions :initarg :sessions :accessor sessions :initform nil
-              :documentation "The sessions/run-contexts that belong to this project.")
-   (%metadata-store :initarg :metadata-store :accessor metadata-store :type scoped-metadata-store))
-   (:documentation "Container for all resources and activities used to attain a goal."))
+  ((%sessions
+    :initarg :sessions
+    :initform ()
+    :accessor sessions
+    :documentation "The sessions/run-contexts that belong to this project.")
+   (%metadata-store
+    :initarg :metadata-store
+    :accessor metadata-store
+    :type scoped-metadata-store))
+   (:documentation
+    "Container for all resources and activities used to attain a goal."))
 
 (defclass system-configuration (configuration-set has-name has-description)
-  ((%designator :initarg :designator :reader designator :initform (error "Must provide a designator."))
-   (%configuration :initarg :configuration :accessor configuration :initform nil))
+  ((%designator
+    :initarg :designator
+    :initform (error "Must provide a designator.")
+    :reader designator)
+   (%configuration
+    :initarg :configuration
+    :initform nil
+    :accessor configuration))
   (:documentation
    "A configuration for the LLM Toolkit. This will be used to configure the top
 level API entry points for the toolkit like session creation, project creation,
 whether the project and sessions are persistent, etc."))
 
 (defclass application (has-name has-description)
-  ((%system-configuration :initarg :system-configuration :accessor system-configuration)
-   (%project :initarg :project :accessor project)
-   (%root-metadata-store :initarg :root-metadata-store :accessor root-metadata-store :initform nil))
+  ((%system-configuration
+    :initarg :system-configuration
+    :accessor system-configuration)
+   (%project
+    :initarg :project
+    :accessor project)
+   (%root-metadata-store
+    :initarg :root-metadata-store
+    :initform nil
+    :accessor root-metadata-store))
   (:documentation
    "An application is the top-level container. It represents a targeted purpose,
 such as a chat application, Q&A, code generation, etc.This provides the API
@@ -218,7 +299,9 @@ store."))
 
 ;;;; ======= Core conditions. =======
 (define-condition immediate-task-stop ()
-  ((%result :initarg :result :reader result))
+  ((%result
+    :initarg :result
+    :reader result))
   (:documentation
    "A condition that is signaled when a task is to be stopped immediately, returning the
 result."))

@@ -50,6 +50,10 @@
 
 (defgeneric %make-session (system-configuration designator &rest args))
 
+(defgeneric session-of-project (project session))
+
+(defgeneric add-session-to-project (project session))
+
 (defun make-project (designator &rest args))
 
 (defun make-session (designator &rest args))
