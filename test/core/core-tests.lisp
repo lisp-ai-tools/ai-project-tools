@@ -20,7 +20,7 @@
   ()
   (:documentation
    "An execution node in an execution tree that has a scoped metadata store.
- This node orchestrates the setting of inputs/outputs and execution of it's children."))
+ This node orchestrates the setting of inputs/outputs and execution of its children."))
 
 
 (defun make-in-mem-app ()

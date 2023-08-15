@@ -115,6 +115,13 @@
   (clrhash (store store)))
 
 ;; Scoped metadata store implementation
+(defmethod initialize-instance :after ((scoped-store scoped-metadata-store)
+                                       &key name parent store schema)
+  (declare (ignorable name store schema))
+  (unless (null parent)
+    ;; (fset:insert (ft:children parent) (fset:size parent) scoped-store)
+    ))
+
 (defmethod scoped-key-name ((store scoped-metadata-store) (key string)
                             &rest args &key (delimiter "/"))
   (let* ((names-from-root (loop :for current := store :then (parent current)

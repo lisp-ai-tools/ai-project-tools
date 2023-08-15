@@ -29,3 +29,39 @@
                              :root-metadata-store store)))
     (setf *test-app* app))
   )
+
+(defun make-nested-stores ()
+  (let* ((store (make-instance 'memory-scoped-metadata-store
+                               :name "/root/"
+                               :parent nil
+                               :schema (list :fake :schema)
+                               :store (make-hash-table :test #'equal)))
+         (child-store (make-instance 'memory-scoped-metadata-store
+                                       :name "child/"
+                                       :parent store
+                                       :schema (list :fake :schema))))
+    (values store child-store)))
+
+#+(or) (defparameter *root-store* nil)
+#+(or) (defparameter *child-store* nil)
+
+#+(or) (multiple-value-bind (store child) (make-nested-stores)
+                             (setf *root-store* store
+                                   *child-store* child)
+         (setf (lookup *root-store* :foo) "foo"
+               (lookup *child-store* :bar) "bar"))
+;; (ft:children *root-store*)
+;; (children *root-store*)
+;; (parent *child-store*)
+;; (ft:child-slot-specifiers *root-store*)
+;; (setf (children *root-store*) (pushnew *child-store* (children *root-store*)))
+;; (format nil "~a" *root-store*)
+;; (describe *root-store*)
+;; (ft:children-alist *root-store*)
+;; (ft:parent *root-store* *child-store*)
+;; (ft:parent *child-store* *root-store*)
+;; (ft:path-of-node *root-store* *child-store*)
+;; (ft::lookup *root-store* '(:children))
+;; (ft::lookup *root-store* '(:children . 0))
+;; (ft::lookup *root-store* '(:children 0 . :store))
+;; (ft::lookup *root-store* '(:children 0 :store :bar
