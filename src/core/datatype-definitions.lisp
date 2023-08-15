@@ -12,7 +12,18 @@
   ((%metadata
     :initarg :metadata
     :accessor metadata))
-  (:documentation "Base class for all objects that have metadata."))
+  (:documentation
+   "Base class for all objects that have simple metadata referring only to themselves."))
+
+(defclass has-metadata-store ()
+  ((%metadata-store
+    :initarg :metadata-store
+    :accessor metadata-store))
+  (:documentation
+   "Base class for all objects that have a metadata store. A metadata-store differs
+from simple metadata in that simple metadata holds only data about the object
+itself. A metadata-store may hold data for/about other objects, and may provide
+a scoping mechanism."))
 
 (defclass has-notes ()
   ((%notes :initarg :notes :accessor notes))
@@ -146,35 +157,40 @@ scope of their execution/run encmpasses that of their children as well."))
 (defclass execution-event (has-data has-metadata belongs-to-session timed)
   ((%input-keys 
     :initarg :input-keys 
-    :initform nil
+    :initform (error "Must supply one or more input keys.")
     :accessor input-keys
-    :type t
+    :type list
     :documentation "Names of expected input artifacts.")
    (%output-keys 
-    :initarg :output-keys 
-    :initform nil
+    :initarg :output-keys
+    :initform (error "Must supply one or more output keys.")
     :accessor output-keys
-    :type t
+    :type list
     :documentation "Names of produced output artifacts.")
    (%inputs 
     :initarg :inputs 
-    :initform (error "Must supply one or more input artifacts")
+    :initform nil
     :accessor inputs
-    :type t
-    :documentation "")
+    :type list
+    :documentation
+    "Inputs to the execution event made available in the context of the execution.")
    (%outputs 
     :initarg :outputs 
     :initform nil
     :accessor outputs
-    :type t
-    :documentation "")
+    :type list
+    :documentation
+    "Outputs of the execution event produced in the context of the execution.")
    (%execution-node 
     :initarg :execution-node 
     :initform nil
     :accessor execution-node
-    :type t
-    :documentation ""))
-  (:documentation "An execution-event describes the relationship between artifacts and executions. Each
+    :type execution-node
+    :documentation
+    "The execution-node that consumed/produced the artifacts for this execution-event
+record."))
+  (:documentation
+   "An execution-event describes the relationship between artifacts and executions. Each
 artifact can be produced by an execution and consumed by other executions.
 Events help you to determine the provenance of artifacts in their ML workflows
 by chaining together artifacts and executions. An event is a record of an action
@@ -207,7 +223,7 @@ an organization uses one shared MetadataStore for metadata resources within each
 project."))
 
 (defclass simple-memory-metadata-store (metadata-store)
-  ((store
+  ((%store
     :initarg :store
     :initform (make-hash-table :test #'equal)
     :accessor store))
@@ -215,12 +231,22 @@ project."))
    "A simple in-memory metadata store that stores metadata in a hash table."))
 
 (defclass scoped-metadata-store (has-name metadata-store tree-node)
-  ((%scope-delimeter
+  ((%store
+    :initarg :store
+    :initform nil ;; Allow using parent's store, checked in initialize-instance
+    :accessor store)
+   (%scope-delimeter
     :initarg :scope-delimeter
     :initform "/"
     :accessor scope-delimeter
     :documentation
-    "The scope delimeter for this store."))
+    "The scope delimeter for this store.")
+  (%scope-path
+   :initarg :scope-path
+   :initform nil
+   :accessor scope-path
+   :documentation
+   "The scope path for this store."))
   (:documentation
    "A scoped metadata store is a metadata store that is provides a scope or
 namespace for the metadata resources within it."))
@@ -245,14 +271,14 @@ a single,queryable, and typed category. Run-contexts can be used to represent
 sets of metadata. An example of a run-context would be a run of an LLM chat
 session, Q&A + retrieval, or machine learning pipeline."))
 
-(defclass session (has-name has-description has-state has-notes timed
+(defclass session (has-name has-description has-state has-notes has-metadata-store timed
                    belongs-to-project run-context)
   ((%metadata-store
     :initarg :metadata-store
     :accessor metadata-store
     :type scoped-metadata-store)))
 
-(defclass project (has-name has-description has-notes)
+(defclass project (has-name has-description has-notes has-metadata-store)
   ((%sessions
     :initarg :sessions
     :initform ()
@@ -279,17 +305,18 @@ session, Q&A + retrieval, or machine learning pipeline."))
 level API entry points for the toolkit like session creation, project creation,
 whether the project and sessions are persistent, etc."))
 
-(defclass application (has-name has-description)
+(defclass application (has-name has-description has-metadata-store)
   ((%system-configuration
     :initarg :system-configuration
     :accessor system-configuration)
    (%project
     :initarg :project
     :accessor project)
-   (%root-metadata-store
-    :initarg :root-metadata-store
-    :initform nil
-    :accessor root-metadata-store))
+   (%metadata-store
+    :initarg :metadata-store
+    :initform (error "Must provide a root metadata store.")
+    :accessor metadata-store
+    :type scoped-metadata-store))
   (:documentation
    "An application is the top-level container. It represents a targeted purpose,
 such as a chat application, Q&A, code generation, etc.This provides the API

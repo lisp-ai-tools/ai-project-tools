@@ -21,6 +21,7 @@
                 #:designator
                 #:configuration
                 #:sessions
+                #:scope-delimeter
                 ;; #:metadata-store
                 #:execution-events
                 #:store
@@ -61,9 +62,12 @@
                 #:get-current-project
                 #:get-current-session
                 #:lookup-system-configuration
+                #:lookup
+                "(setf lookup)"
                 #:lookup-project
                 #:lookup-session
-                )
+                #:scoped-path
+                #:scoped-key-name)
   (:import-from #:ai-project-tools/tests
                 #:ai-project-tools/tests-suite)
   (:import-from #:fiveam

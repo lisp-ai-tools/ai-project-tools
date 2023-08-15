@@ -14,6 +14,7 @@
    ;; base mixins
    #:has-data
    #:has-metadata
+   #:has-metadata-store
    #:has-notes
    #:has-state
    #:has-name
@@ -50,6 +51,7 @@
    ;; accessors
    #:data
    #:metadata
+   #:metadata-store
    #:notes
    #:state
    #:name
@@ -68,6 +70,7 @@
    #:inputs
    #:outputs
    #:execution-node
+   #:scope-delimeter
    #:runs
 
    ;; functions
@@ -82,9 +85,13 @@
    #:get-current-system-configuration
    #:get-current-project
    #:get-current-session
+   #:lookup
+   "(setf lookup)"
    #:lookup-system-configuration
    #:lookup-project
    #:lookup-session
+   #:scoped-path
+   #:scoped-key-name
 
    ;; utilities
    #:vector-to-hex-string

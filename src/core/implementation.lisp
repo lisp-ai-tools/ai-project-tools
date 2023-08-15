@@ -1,5 +1,13 @@
 (in-package #:ai-project-tools/core)
 
+(defmethod print-object ((object has-name) stream)
+  (format stream "Name: ~A~%" (name object))
+  (call-next-method))
+
+(defmethod print-object ((object has-description) stream)
+  (format stream "Description: ~A~%" (description object))
+  (call-next-method))
+
 (defmethod run :around ((runner realtime-timed-runnable) &rest args)
   (unwind-protect
        (progn
@@ -66,9 +74,10 @@
       (uiop/filesystem:ensure-all-directories-exist (list working-directory)))
     (setf (working-directory session) working-directory)))
 
-(defmethod %make-project ((config simple-in-memory-system-configuration) (designator (eql :default))
+(defmethod %make-project ((config simple-in-memory-system-configuration)
+                          (designator (eql :default))
                           &rest args)
-  (let ((root-metadata-store (root-metadata-store config))
+  (let ((root-metadata-store (metadata-store config))
         (project (make-instance 'project
                  :name "default-ad-hoc"
                  :description "Default ad hoc project for noodling around with LLMs at the REPL"
@@ -84,8 +93,9 @@
     (log:info "Created ad-hoc project: ~a." project)
     project))
 
-(defmethod %make-session ((config simple-in-memory-system-configuration) (designator (eql :default))
-                      &rest args &key project)
+(defmethod %make-session ((config simple-in-memory-system-configuration)
+                          (designator (eql :default))
+                          &rest args &key project)
   (let*  ((session (make-instance 'session
                                   :name "ad-hoc-session"
                                   :description "Ad hoc session for noodling around with LLMs at the REPL"
@@ -97,13 +107,15 @@
                                     :store (store (metadata-store project))
                                     :schema (list :fake t))
           (sessions project) (cons (sessions project) session)
-          (lookup (root-metadata-store config) (format nil "/sessions/~a" (name session))) session)
+          (lookup (metadata-store config) (format nil "/sessions/~a" (name session))) session)
     (log:info "Created ad-hoc non-persistent in-memory session: ~a." session)
     session))
 
 (defmethod initialize-instance :after ((session session) &key project)
   (unless (null project)
-    (setf (sessions project) (pushnew (sessions project) session))))
+    (setf (sessions project) (pushnew session (sessions project))))
+  (unless (and (slot-boundp session '%start-time) (start-time session))
+    (setf (start-time session) (local-time:now))))
 
 ;; Basic memory-metadata-store implementation
 (defmethod lookup ((store simple-memory-metadata-store) key &rest args &key default)
@@ -119,24 +131,24 @@
   (clrhash (store store)))
 
 ;; Scoped metadata store implementation
-(defmethod initialize-instance :after ((scoped-store scoped-metadata-store)
-                                       &key name parent store schema)
-  (declare (ignorable name store schema))
-  (unless (null parent)
-    ;; (fset:insert (ft:children parent) (fset:size parent) scoped-store)
-    (setf (children parent) (pushnew (children parent) scoped-store))))
+(defmethod scoped-path ((store scoped-metadata-store) &rest args)
+  (declare (ignore args))
+  (let* ((names-from-root (nreverse (loop :for current := store :then (parent current)
+                                          :until (null current)
+                                          :collect (name current))))
+         (merged-names (reduce (lambda (a b)
+                                 (concatenate 'string a (scope-delimeter store) b))
+                               names-from-root)))
+    (concatenate 'string (scope-delimeter store) merged-names)))
 
 (defmethod scoped-key-name ((store scoped-metadata-store) (key string)
-                            &rest args &key (delimiter "/"))
-  (let* ((names-from-root (loop :for current := store :then (parent current)
-                                :until (null current)
-                                :collect (name current)))
-         (path-from-root (nreverse (cons key names-from-root))))
-    (reduce (lambda (a b) (concatenate 'string a delimiter b)) path-from-root)))
+                            &rest args)
+  (declare (ignore args))
+  (concatenate 'string (scoped-path store) (scope-delimeter store) key))
 
 (defmethod lookup ((store memory-scoped-metadata-store) (key-string string) &rest args &key default)
   (let ((scoped-key (scoped-key-name store key-string)))
-   (gethash scoped-key (store store)) default))
+    (gethash scoped-key (store store) default)))
 
 (defmethod (setf lookup) (value (store memory-scoped-metadata-store) (key-string string))
   (let ((scoped-key (scoped-key-name store key-string)))
@@ -145,6 +157,26 @@
 (defmethod discard ((store memory-scoped-metadata-store) (key-string string))
   (let ((scoped-key (scoped-key-name store key-string)))
     (remhash scoped-key (store store))))
+
+(defmethod initialize-instance :after ((scoped-store scoped-metadata-store)
+                                       &key name parent store schema)
+  (declare (ignorable name store schema))
+  (if (not (null parent))
+    (setf (children parent) (pushnew scoped-store (children parent))
+          (scope-path scoped-store) (scoped-path scoped-store)
+          (store scoped-store) (store parent))
+    (unless (store scoped-store)
+      (setf (store scoped-store) (make-hash-table :test 'equal)))))
+
+;; has-metadata-store implementation
+(defmethod lookup ((store has-metadata-store) (key string) &rest args &key default)
+  (lookup (metadata-store store) key :default default))
+(defmethod (setf lookup) (value (store has-metadata-store) (key string))
+  (setf (lookup (metadata-store store) key) value))
+(defmethod discard ((store has-metadata-store) (key string))
+    (discard (metadata-store store) key))
+(defmethod clear ((store has-metadata-store))
+    (clear (metadata-store store)))
 
 (defun get-default-system-configuration ()
     (multiple-value-bind (configuration exists-p)

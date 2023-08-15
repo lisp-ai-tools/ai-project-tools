@@ -23,27 +23,40 @@
  This node orchestrates the setting of inputs/outputs and execution of its children."))
 
 
+(defparameter *in-mem-app* nil)
+(defparameter *in-mem-app-proj* nil)
+(defparameter *in-mem-app-session* nil)
+;;(describe *in-mem-app*)
+;;(scoped-path (metadata-store (project *in-mem-app*)))
 (defun make-in-mem-app ()
   (let* ((config (make-instance 'simple-in-memory-system-configuration
                                 :designator :ephemeral-chat-config
                                 :name "Simple in-memory system configuration."
                                 :description "A simple in-memory system configuration that does not persist."))
          (store (make-instance 'memory-scoped-metadata-store
-                               :name "/root"
+                               :name "root"
                                :parent nil
                                :schema (list :fake :schema)
                                :store (make-hash-table :test #'equal)))
+         (projects-store (make-instance 'memory-scoped-metadata-store
+                                        :name "projects"
+                                        :parent store
+                                        :schema (list :fake :schema)))
          (project-store (make-instance 'memory-scoped-metadata-store
                                        :name "ephemeral-chat-project"
-                                       :parent store
+                                       :parent projects-store
                                        :schema (list :fake :schema)))
          (project (make-instance 'project
                                  :name "ephemeral-chat-project"
                                  :description "Project for a quick-n-dirty chat app for testing in the REPL."
                                  :metadata-store project-store))
+         (sessions-store (make-instance 'memory-scoped-metadata-store
+                                        :name "sessions"
+                                        :parent project-store
+                                        :schema (list :fake :schema)))
          (session-store (make-instance 'memory-scoped-metadata-store
                                        :name "ephemeral-chat-session"
-                                       :parent project-store
+                                       :parent sessions-store
                                        :schema (list :fake :schema)))
          (session (make-instance 'session
                                  :name "ephemeral-chat-session"
@@ -55,20 +68,24 @@
                              :description "Just a quick-n-dirty chat app for testing in the REPL."
                              :system-configuration config
                              :project project
-                             :root-metadata-store store)))
+                             :metadata-store store)))
     (register-system-configuration :default (system-configuration app))
-    app))
+    (setf *in-mem-app-proj* project
+          *in-mem-app-session* session
+          *in-mem-app* app)))
+;; (make-in-mem-app)
+;; (setf (lookup *in-mem-app-session* "some-session-key") "BLAH")
+;; (lookup *in-mem-app-session* "some-session-key")
 
 (test ai-project-tools/core-tests-suite-exists
   (is-true t))
-
 
 (test simple-creation-of-top-level-components-1
   (let ((app (make-in-mem-app)))
     (is-true (typep app 'application))
     (is-true (typep (project app) 'project))
     (is-true (typep (system-configuration app) 'system-configuration))
-    (is-true (typep (root-metadata-store app) 'metadata-store))))
+    (is-true (typep (metadata-store app) 'scoped-metadata-store))))
 
 (test simple-creation-of-top-level-components-2
   (let ((app (make-in-mem-app)))

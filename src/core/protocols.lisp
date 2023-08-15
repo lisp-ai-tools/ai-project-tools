@@ -73,6 +73,7 @@
   (:documentation "Delete all data in the metadata-store."))
 
 ;; Scoped metadata store protocol
+(defgeneric scoped-path (scoped-metadata-store &rest args))
 (defgeneric scoped-key-name (scoped-metadata-store key &rest args))
 
 ;;;
