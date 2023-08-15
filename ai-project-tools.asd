@@ -23,8 +23,6 @@
                :serapeum
                :iterate
                :closer-mop
-               :fset
-               :functional-trees
                :local-time
                :ironclad)
   :components ((:module "src/core"

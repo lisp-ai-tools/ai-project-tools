@@ -1,8 +1,6 @@
 (in-package #:ai-project-tools/core)
 
 ;;;; ======= Base mixin/concept classes. =======
-(eval-when (:compile-toplevel :load-toplevel :execute)
-
 (defclass has-data ()
   ((%data :accessor data :initarg :data :initform nil
           :documentation "Contains arbitrary data")))
@@ -40,7 +38,8 @@ that state is more specific data about the owning object."))
 (defclass belongs-to-session ()
   ((%session :initarg :session :accessor session))
   (:documentation
-   "Base class for all objects that belong to a session (which in turn, belongs to a project)."))
+   "Base class for all objects that belong to a session (which in turn, belongs to a
+project)."))
 
 (defclass timed ()
   ((%start-time :initarg :start-time :accessor start-time)
@@ -49,31 +48,30 @@ that state is more specific data about the owning object."))
    ;; (%time-units :initarg :time-units :accessor time-units)
    )
   (:documentation
-   "A thing that is measured in the time dimension. It has a start time, end time, and duration."))
+   "A thing that is measured in the time dimension. It has a start time, end time,
+and duration."))
 
-(defclass node (ft:node)
-  ()
+(defclass node () ()
   (:documentation
-   "Base marker class for our system nodes. Use functional trees node as base class."))
+   "Base marker class for our system nodes."))
 
 (defclass simple-leaf-node (node)
-  ((%parent :initarg :parent :initform nil :accessor parent
+  ((%parent :initarg :parent
+            :initform nil
+            :accessor parent
             :documentation "The parent of the node, if any."))
   (:documentation
    "Base marker class for all simple leaf nodes. Nodes that are not composites. They
 contain no children."))
 
-(ft:define-node-class tree-node (simple-leaf-node)
-  ((children :accessor children
-             :type list
-             :initarg :children
+(defclass tree-node (simple-leaf-node)
+  ((children :initarg :children
              :initform ()
+             :accessor children
+             :type list
              :documentation
              "The list of children of the node,
-which may be more nodes, or other values. If the parent slot is nil, this is a root node.")
-   (ft:child-slots :initform '(children) :allocation :class)
-   ;; (ft:child-slot-specifiers :allocation :class)
-   )
+which may be more nodes, or other values. If the parent slot is nil, this is a root node."))
   (:documentation "Base class for all parent nodes. Nodes that are composites."))
 
 
@@ -161,18 +159,18 @@ project."))
 (defclass simple-memory-metadata-store (metadata-store)
   ((store :initarg :store :accessor store
            :initform (make-hash-table :test #'equal)))
-  (:documentation "A simple in-memory metadata store that stores metadata in a hash table."))
+  (:documentation
+   "A simple in-memory metadata store that stores metadata in a hash table."))
 
 (defclass scoped-metadata-store (has-name metadata-store tree-node)
   ((%scope-delimeter :initarg :scope-delimeter :accessor scope-delimeter
                      :initform "/"
-                     :documentation "The scope delimeter for this store.")
-   (ft:child-slots :initform '(children store) :allocation :class))
+                     :documentation "The scope delimeter for this store."))
   (:documentation
    "A scoped metadata store is a metadata store that is provides a scope or
 namespace for the metadata resources within it."))
 
-(ft:define-node-class memory-scoped-metadata-store (scoped-metadata-store simple-memory-metadata-store)
+(defclass memory-scoped-metadata-store (scoped-metadata-store simple-memory-metadata-store)
   ()
   (:documentation
    "An in-memory scoped metadata store is a scoped metadata store that stores
@@ -224,5 +222,3 @@ store."))
   (:documentation
    "A condition that is signaled when a task is to be stopped immediately, returning the
 result."))
-
-) ;; eval-when

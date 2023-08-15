@@ -1,7 +1,5 @@
 (defpackage #:ai-project-tools/core
   (:use #:cl #:alexandria)
-  (:local-nicknames
-   (:ft :functional-trees))
   (:import-from #:serapeum
                 #:with-thunk)
   (:export
