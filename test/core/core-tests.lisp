@@ -22,6 +22,10 @@
    "An execution node in an execution tree that has a scoped metadata store.
  This node orchestrates the setting of inputs/outputs and execution of its children."))
 
+(defclass simple-chat-app (application ai-project-tools/core:runnable) ())
+
+(defmethod ai-project-tools/core:run ((app simple-chat-app) &rest args)
+  (log:info "Running ~a with args ~a" app args))
 
 (defparameter *in-mem-app* nil)
 (defparameter *in-mem-app-proj* nil)
@@ -63,7 +67,7 @@
                                  :description "Session for a quick-n-dirty chat app for testing in the REPL."
                                  :project project
                                  :metadata-store session-store))
-         (app (make-instance 'application
+         (app (make-instance 'simple-chat-app
                              :name "ephemeral-chat-app"
                              :description "Just a quick-n-dirty chat app for testing in the REPL."
                              :system-configuration config
@@ -74,6 +78,7 @@
           *in-mem-app-session* session
           *in-mem-app* app)))
 ;; (make-in-mem-app)
+;; (ai-project-tools/core:run *in-mem-app*)
 ;; (setf (lookup *in-mem-app-session* "some-session-key") "BLAH")
 ;; (lookup *in-mem-app-session* "some-session-key")
 
