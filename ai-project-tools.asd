@@ -24,7 +24,8 @@
                :iterate
                :closer-mop
                :local-time
-               :ironclad)
+               :ironclad
+               :lparallel)
   :components ((:module "src/core"
                 :components
                 ((:file "package")

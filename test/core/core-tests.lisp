@@ -22,11 +22,82 @@
    "An execution node in an execution tree that has a scoped metadata store.
  This node orchestrates the setting of inputs/outputs and execution of its children."))
 
-(defclass simple-chat-app (application ai-project-tools/core:runnable) ())
+(defclass simple-chat-app (application ai-project-tools/core:runnable)
+  ((%kernel
+   :initarg :kernel
+   :initform nil
+   :accessor kernel
+   ;; :type lp:kernel
+   :documentation "The lparallel kernel for the application.")
+  (%task-channel
+   :initform nil
+   :accessor task-channel
+   ;; :type lp:channel
+   :documentation "The lparallel task channel for the application.")
+  (%running-p
+   :initform nil
+   :accessor running-p
+   :type boolean
+   :documentation "Whether the application is running or not.")))
 
-(defmethod ai-project-tools/core:run ((app simple-chat-app) &rest args)
-  (log:info "Running ~a with args ~a" app args))
+(defgeneric run-task (app task)
+  (:documentation "Run a task in the application."))
 
+(defmethod run-task ((app simple-chat-app) task)
+  (unless (running-p app)
+    (error "Cannot run task ~a in application ~a because it is not running." task app))
+  (lp:submit-task (task-channel app) task))
+
+(defgeneric stop (app))
+
+(defmethod stop ((app simple-chat-app))
+  (unless (running-p app)
+    (error "Cannot stop application ~a because it is not running." app))
+  (run-task app (lambda () :stop)))
+
+(defmethod ai-project-tools/core:run ((app simple-chat-app)
+                                      &rest args
+                                      &key
+                                        (project (project app) project-supplied-p)
+                                        (session nil session-supplied-p))
+
+  (unwind-protect
+       (let* ((core::*current-application* app)
+              (core::*current-system-configuration* (system-configuration app))
+              (core::*root-metadata-store* (metadata-store app))
+              (core::*current-metadata-store* (metadata-store app))
+              (core::*current-project* project)
+              (core::*current-session* session))
+         (setf (kernel app) (lp:make-kernel 8 :name (format nil "~a-kernel" (name app))
+                                              :bindings `((core::*current-application* . ,core::*current-application*)
+                                                          (core::*current-system-configuration* . ,core::*current-system-configuration*)
+                                                          (core::*current-metadata-store* . ,core::*current-metadata-store*)
+                                                          (core::*root-metadata-store* . ,core::*root-metadata-store*)
+                                                          (core::*current-project* . ,core::*current-project*)
+                                                          (core::*current-session* . ,core::*current-session*)))
+               lp:*kernel* (kernel app)
+               (task-channel app) (lp:make-channel)
+               (running-p app) t)
+         (run-task app (lambda ()
+                         (log:info "Running ~a with args ~a" app args)
+                         t))
+         (log:info "Application ran first task. Result: ~a" (lp:receive-result (task-channel app)))
+         (loop :for i :from 1 :to 10
+               :do (let ((task-result (lp:receive-result (task-channel app))))
+                     (if (eq task-result :stop)
+                         (return)
+                         ;; (run-task app task)
+                         ))))
+    (progn
+      (lp:end-kernel :wait t)
+      (log:info "Kernel shut down. App ~a is no longer running." app)
+      (setf (kernel app) nil
+            (task-channel app) nil
+            (running-p app) nil))))
+
+;; (make-in-mem-app)
+;; (run-task *in-mem-app* (lambda () (log:info "Running this task in app ~a" core:*current-application*)))
+;; (stop *in-mem-app*)
 (defparameter *in-mem-app* nil)
 (defparameter *in-mem-app-proj* nil)
 (defparameter *in-mem-app-session* nil)
@@ -76,7 +147,9 @@
     (register-system-configuration :default (system-configuration app))
     (setf *in-mem-app-proj* project
           *in-mem-app-session* session
-          *in-mem-app* app)))
+          *in-mem-app* app)
+    (log:info "Created in-mem app ~a" app)
+    (ai-project-tools/core:run app project session)))
 ;; (make-in-mem-app)
 ;; (ai-project-tools/core:run *in-mem-app*)
 ;; (setf (lookup *in-mem-app-session* "some-session-key") "BLAH")

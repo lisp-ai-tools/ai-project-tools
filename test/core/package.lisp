@@ -1,7 +1,8 @@
 (defpackage :ai-project-tools/core-tests
   (:use #:cl #:fiveam)
   (:local-nicknames
-   (:core :ai-project-tools/core))
+   (:core :ai-project-tools/core)
+   (:lp :lparallel))
   (:import-from #:ai-project-tools/core
                 ;; conditions
                 #:immediate-task-stop
