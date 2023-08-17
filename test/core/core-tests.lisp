@@ -24,21 +24,26 @@
 
 (defclass simple-chat-app (application ai-project-tools/core:runnable)
   ((%kernel
-   :initarg :kernel
-   :initform nil
-   :accessor kernel
-   ;; :type lp:kernel
-   :documentation "The lparallel kernel for the application.")
-  (%task-channel
-   :initform nil
-   :accessor task-channel
-   ;; :type lp:channel
-   :documentation "The lparallel task channel for the application.")
-  (%running-p
-   :initform nil
-   :accessor running-p
-   :type boolean
-   :documentation "Whether the application is running or not.")))
+    :initarg :kernel
+    :initform nil
+    :accessor kernel
+    ;; :type lp:kernel
+    :documentation "The lparallel kernel for the application.")
+   (%task-queue
+    :initform nil
+    :accessor task-queue
+    ;; :type lp:queue
+    :documentation "The lparallel task queue for the application.")
+   (%task-queue-capacity
+    :initform 8
+    :accessor task-queue-capacity
+    :type integer
+    :documentation "The capacity of the task queue.")
+   (%running-p
+    :initform nil
+    :accessor running-p
+    :type boolean
+    :documentation "Whether the application is running or not.")))
 
 (defgeneric run-task (app task)
   (:documentation "Run a task in the application."))
@@ -46,21 +51,36 @@
 (defmethod run-task ((app simple-chat-app) task)
   (unless (running-p app)
     (error "Cannot run task ~a in application ~a because it is not running." task app))
-  (lp:submit-task (task-channel app) task))
+  (let ((result-channel (lp:make-channel)))
+    (lp:submit-task result-channel
+                    (lambda ()
+                      (let ((result (funcall task)))
+                        result)))
+    (lp:receive-result result-channel)))
 
 (defgeneric stop (app))
 
 (defmethod stop ((app simple-chat-app))
   (unless (running-p app)
     (error "Cannot stop application ~a because it is not running." app))
-  (run-task app (lambda () :stop)))
+  (run-task app :stop))
+
+(defun %shutdown-app (app)
+  (lp:end-kernel :wait t)
+  (log:info "Kernel shut down. App ~a is no longer running." app)
+  (log:info "lp:*kernel* = ~a" lp:*kernel*)
+  (when (> 0 (lparallel.queue:queue-count (task-queue app)))
+    (log:warn "App task-queue count: ~a. NOTE: These tasks will NOT be run. Discarding..."
+              (lparallel.queue:queue-count (task-queue app)))
+  (setf (kernel app) nil
+        (task-queue app) nil
+        (running-p app) nil)))
 
 (defmethod ai-project-tools/core:run ((app simple-chat-app)
                                       &rest args
                                       &key
                                         (project (project app) project-supplied-p)
                                         (session nil session-supplied-p))
-
   (unwind-protect
        (let* ((core::*current-application* app)
               (core::*current-system-configuration* (system-configuration app))
@@ -76,24 +96,26 @@
                                                           (core::*current-project* . ,core::*current-project*)
                                                           (core::*current-session* . ,core::*current-session*)))
                lp:*kernel* (kernel app)
-               (task-channel app) (lp:make-channel)
+               (task-queue app) (lparallel.queue:make-queue :fixed-capacity (task-queue-capacity app))
                (running-p app) t)
-         (run-task app (lambda ()
-                         (log:info "Running ~a with args ~a" app args)
-                         t))
-         (log:info "Application ran first task. Result: ~a" (lp:receive-result (task-channel app)))
-         (loop :for i :from 1 :to 10
-               :do (let ((task-result (lp:receive-result (task-channel app))))
-                     (if (eq task-result :stop)
-                         (return)
-                         ;; (run-task app task)
-                         ))))
-    (progn
-      (lp:end-kernel :wait t)
-      (log:info "Kernel shut down. App ~a is no longer running." app)
-      (setf (kernel app) nil
-            (task-channel app) nil
-            (running-p app) nil))))
+         (let ((iterations 0)
+               (queue-timeouts 0)
+               (check-app-kernel-running-p (run-task app (lambda ()
+                                                           (log:info "Running ~a with args ~a" app args)
+                                                           t))))
+           (log:info "Application ran first task. Result: ~a" check-app-kernel-running-p)
+         (loop :while (running-p app)
+               :do (multiple-value-bind (new-task no-timeout-p) (lparallel.queue:try-pop-queue (task-queue app) :timeout 5)
+                     (incf iterations)
+                     (if (not no-timeout-p)
+                         (progn
+                           (incf queue-timeouts)
+                           (log:info "App task queue timeout. Iterations: ~a. Queue timeouts: ~a" iterations queue-timeouts))
+                         (if (eq new-task :stop)
+                             (setf (running-p app) nil)
+                             (run-task app new-task)))))))
+  (progn (%shutdown-app app)
+         (log:info "App ~a shut down.DONE." app))))
 
 ;; (make-in-mem-app)
 ;; (run-task *in-mem-app* (lambda () (log:info "Running this task in app ~a" core:*current-application*)))
@@ -169,8 +191,6 @@
   (let ((app (make-in-mem-app)))
     (is (eql (get-current-system-configuration) (system-configuration app)))
     (is (eql (get-default-system-configuration) (system-configuration app)))))
-
-
 
 ;; (ql:quickload '(:ai-project-tools :ai-project-tools/core-tests))
 ;; (run! 'ai-project-tools/core-tests-suite-exists)
