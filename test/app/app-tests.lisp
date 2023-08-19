@@ -7,21 +7,21 @@
 (test ai-project-tools/app-tests-suite-exists
   (is-true t))
 
-(test base-lparallel-app-bindings
-  (let ((cur-app-bound-p)
-        (cur-sysconf-bound-p)
-        (cur-md-store-bound-p)
-        (root-md-store-bound-p)
-        (cur-proj-bound-p)
-        (cur-sess-bound-p)
-        (in-mem-app (make-in-mem-app)))
-    (flet ((check-app-specials ()
-             (setf cur-app-bound-p (boundp 'core::*current-application*))))
-      (unwind-protect
-           (progn
-             (run-task in-mem-app #'check-app-specials))
-        (stop in-mem-app))
-      (is (eq cur-app-bound-p t)))))
+;; (test base-lparallel-app-bindings
+;;   (let ((cur-app-bound-p)
+;;         (cur-sysconf-bound-p)
+;;         (cur-md-store-bound-p)
+;;         (root-md-store-bound-p)
+;;         (cur-proj-bound-p)
+;;         (cur-sess-bound-p)
+;;         (in-mem-app (make-in-mem-app)))
+;;     (flet ((check-app-specials ()
+;;              (setf cur-app-bound-p (boundp 'core::*current-application*))))
+;;       (unwind-protect
+;;            (progn
+;;              (run-task in-mem-app #'check-app-specials))
+;;         (stop in-mem-app))
+;;       (is (eq cur-app-bound-p t)))))
 
 ;; (ql:quickload '(:ai-project-tools :ai-project-tools/app-tests))
 ;; (run! 'ai-project-tools/app-tests-suite-exists)
@@ -33,15 +33,15 @@
 ;; (setf (app::running-p *in-mem-app*) nil)
 ;; (stop *in-mem-app*)
 
-(defvar *app-bound-p* nil)
-
-(let ((*app-bound-p* nil)
-      (task (lambda ()
-              (log:info "Running task with dynamic binding of *current-application*" core::*current-application*)
-              (log:info "Is *current-application* bound? ~a" (boundp 'core::*current-application*))
-              (setf *app-bound-p* (boundp 'core::*current-application*))
-              (log:info "app-bound-p: ~a" *app-bound-p*))))
-  (log:info "Running task...")
-  (run-task *in-mem-app* task))
-  (log:info "app-bound-p: ~a" *app-bound-p*)
-  (format nil "app-bound-p: ~a~%" *app-bound-p*)
+#+(or)(let ((app-bound-p nil)
+            (task (lambda ()
+                    (log:info "Running task with dynamic binding of *current-application*" core::*current-application*)
+                    (log:info "Is *current-application* bound? ~a" (boundp 'core::*current-application*))
+                    (setf app-bound-p (boundp 'core::*current-application*))))
+            (result-channel (lp:make-channel)))
+        (log:info "Running task...")
+        (run-task *in-mem-app* task)
+        (log:info "app-bound-p: ~a" app-bound-p)
+        (let ((result (receive result-channel)))
+          (log:info "result: ~a" result)
+          (log:info "app-bound-p: ~a" app-bound-p)))

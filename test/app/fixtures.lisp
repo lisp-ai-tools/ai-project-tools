@@ -8,7 +8,7 @@
 
 (defclass simple-chat-app (base-lparallel-application) ())
 
-(defun make-in-mem-app ()
+(defun make-in-mem-app (&key (max-iterations 10) (queue-timeout 0.1))
   (let* ((config (make-instance 'core::simple-in-memory-system-configuration
                                 :designator :ephemeral-chat-config
                                 :name "Simple in-memory system configuration."
@@ -48,7 +48,9 @@
                              :description "Just a quick-n-dirty chat app for testing in the REPL."
                              :system-configuration config
                              :project project
-                             :metadata-store store)))
+                             :metadata-store store
+                             :max-iterations max-iterations
+                             :queue-timeout queue-timeout)))
     (core:register-system-configuration :default (system-configuration app))
     (setf *in-mem-app-proj* project
           *in-mem-app-session* session

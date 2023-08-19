@@ -20,7 +20,18 @@
                                             :ai-project-tools/tests))
                       (error "test failure"))))
 
-
+(asdf:defsystem #:ai-project-tools/tests
+  :depends-on (#:fiveam #:ai-project-tools/core-tests #:ai-project-tools/app-tests)
+  :serial t
+  :components ((:module "test"
+                :components
+                ((:file "package")
+                 (:file "ai-project-tools-tests"))))
+  :perform (test-op (op c)
+                    (uiop:symbol-call
+                     :fiveam :run!
+                     (uiop:find-symbol* :ai-project-tools/tests-suite
+                                        :ai-project-tools/tests))))
 (asdf:defsystem #:ai-project-tools/core
   :description "AI Project Tools - Core concept classes, protocols, and utilities"
   :version "0.1.0"

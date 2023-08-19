@@ -185,7 +185,7 @@ scope of their execution/run encmpasses that of their children as well."))
     :initarg :execution-node 
     :initform nil
     :accessor execution-node
-    :type execution-node
+    :type (or nil execution-node)
     :documentation
     "The execution-node that consumed/produced the artifacts for this execution-event
 record."))
