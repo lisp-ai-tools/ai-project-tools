@@ -39,6 +39,7 @@
 
    ;; Core system runtime container types
    #:metadata-store
+   #:scoped-metadata-store
    #:metadata-schema
    #:run-context
    #:session

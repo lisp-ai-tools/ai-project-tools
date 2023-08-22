@@ -7,6 +7,14 @@
        (bt:with-recursive-lock-held ((app-lock ,app))
          ,@body))))
 
+(defun wait-for-app-start (app)
+  (unless (running-p app)
+    (wait-for-latch (app-started-latch app))))
+
+(defun wait-for-app-stop (app)
+  (when (running-p app)
+    (wait-for-latch (app-stopped-latch app))))
+
 (defgeneric destroy (app)
   (:documentation "Destroy the application."))
 

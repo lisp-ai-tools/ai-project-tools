@@ -33,12 +33,15 @@
   (:export
    ;; conditions
    ;; classes
-   #:runnable-application
+   #:run-loop-application
    #:lparallel-application
    ;; accessors
    #:app-lock
+   #:app-thread
+   #:app-started-latch
    #:max-iterations
    #:iteration-count
+   #:running-p
    #:kernel
    #:task-queue
    #:task-queue-capacity
@@ -51,5 +54,9 @@
    #:destroy
    #:start
    #:stop
+   #:wait-for-app-start
+   #:wait-for-app-stop
+   #:should-continue-running-p
    #:run-loop-step
-   #:run-task))
+   #:run-task
+   #:process-task-queue))

@@ -8,7 +8,7 @@
 
 (defclass simple-chat-app (base-lparallel-application) ())
 
-(defun make-in-mem-app (&key (max-iterations 10) (queue-timeout 0.1))
+(defun make-in-mem-app (&key (start t start-provided-p) (max-iterations 10) (queue-timeout 0.1))
   (let* ((config (make-instance 'core::simple-in-memory-system-configuration
                                 :designator :ephemeral-chat-config
                                 :name "Simple in-memory system configuration."
@@ -56,7 +56,7 @@
           *in-mem-app-session* session
           *in-mem-app* app)
     (log:info "Created in-mem app ~a" app)
-    (ai-project-tools/app:start app project session)
+    (when start (ai-project-tools/app:start app project session))
     app))
 
 ;; (make-in-mem-app)

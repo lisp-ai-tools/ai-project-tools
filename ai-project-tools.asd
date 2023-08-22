@@ -102,6 +102,7 @@
   :components ((:module "src/app"
                 :components
                 ((:file "package")
+                 (:file "latch")
                  (:file "variables")
                  (:file "datatype-definitions")
                  (:file "protocols")

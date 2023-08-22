@@ -8,6 +8,16 @@
     :documentation
     "The lock for the application. Needed to ensure that only one thread runs the
 lifecycle methods at a time.")
+   (%app-started-latch
+    :initform (make-latch)
+    :reader app-started-latch
+    :documentation
+    "The latch for the readiness of the application. Used to signal when the application has finished starting.")
+   (%app-stopped-latch
+    :initform (make-latch)
+    :reader app-stopped-latch
+    :documentation
+    "The latch for the readiness of the application. Used to signal when the application has finished stopping.")
    (%app-thread
     :initform nil
     :accessor app-thread
