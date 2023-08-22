@@ -1,11 +1,23 @@
 (in-package #:ai-project-tools/app-tests)
 
-(def-suite ai-project-tools/app-tests-suite :in ai-project-tools/tests-suite)
+(def-suite ai-project-tools/app-tests-suite :in ai-project-tools/tests:ai-project-tools/tests-suite)
 
 (in-suite ai-project-tools/app-tests-suite)
 
 (test ai-project-tools/app-tests-suite-exists
   (is-true t))
+
+(test simple-creation-of-top-level-components-1
+  (let ((app (make-in-mem-app)))
+    (is-true (typep app 'application))
+    (is-true (typep (project app) 'project))
+    (is-true (typep (system-configuration app) 'system-configuration))
+    (is-true (typep (metadata-store app) 'scoped-metadata-store))))
+
+(test simple-creation-of-top-level-components-2
+  (let ((app (make-in-mem-app)))
+    (is (eql (get-current-system-configuration) (system-configuration app)))
+    (is (eql (get-default-system-configuration) (system-configuration app)))))
 
 ;; (test base-lparallel-app-bindings
 ;;   (let ((cur-app-bound-p)

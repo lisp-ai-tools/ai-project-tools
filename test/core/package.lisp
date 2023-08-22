@@ -3,6 +3,8 @@
   (:local-nicknames
    (:core :ai-project-tools/core)
    (:lp :lparallel))
+  (:import-from #:fiveam
+                #:run-tests)
   (:import-from #:ai-project-tools/core
                 ;; conditions
                 #:immediate-task-stop
@@ -71,7 +73,5 @@
                 #:scoped-key-name)
   (:import-from #:ai-project-tools/tests
                 #:ai-project-tools/tests-suite)
-  (:import-from #:fiveam
-                #:run-tests)
   (:export #:ai-project-tools/core-tests-suite
            #:ai-project-tools/core-tests-suite-exists))

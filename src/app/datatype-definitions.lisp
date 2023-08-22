@@ -1,8 +1,20 @@
 (in-package #:ai-project-tools/app)
 
-
 (defclass run-loop-application (application runnable)
-  ((%max-iterations
+  ((%app-lock
+    :initform (bt:make-recursive-lock "app-lock")
+    :reader app-lock
+    :type bt:lock
+    :documentation
+    "The lock for the application. Needed to ensure that only one thread runs the
+lifecycle methods at a time.")
+   (%app-thread
+    :initform nil
+    :accessor app-thread
+    :type (or null bt:thread)
+    :documentation "The thread the application is running in.")
+   (%max-iterations
+    :initarg :max-iterations
     :initform -1
     :accessor max-iterations
     :type integer
@@ -25,23 +37,25 @@
     :initarg :kernel
     :initform nil
     :accessor kernel
-    :type (or nil lp:kernel)
+    :type (or null lp:kernel)
     :documentation "The lparallel kernel for the application.")
    (%task-queue
     :initform nil
     :accessor task-queue
-    :type (or nil lp:queue)
+    :type (or null lpq:queue)
     :documentation "The lparallel task queue for the application.")
    (%task-queue-capacity
+    :initarg :task-queue-capacity
     :initform 8
     :accessor task-queue-capacity
     :type integer
     :documentation "The capacity of the task queue before a push-queue call blocks.")
    (%task-queue-timeout
+    :initarg :task-queue-timeout
     :initform 0.1
     :accessor task-queue-timeout
     :type number
     :documentation
     "The timeout for the task queue in seconds. Use negative values for no timeout.
-Use float values for fractional seconds.")
+Use float values for fractional seconds."))
   (:documentation "An application that uses lparallel to run tasks in the run/run-loop-step methods"))

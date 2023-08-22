@@ -1,5 +1,12 @@
 (in-package #:ai-project-tools/app)
 
+(defmacro with-app-lock-held ((app lock-var) &body body)
+  "Hold app lock for the duration of the `body`."
+  (alx:once-only (app)
+    `(let ((,lock-var (app-lock ,app)))
+       (bt:with-recursive-lock-held ((app-lock ,app))
+         ,@body))))
+
 (defgeneric destroy (app)
   (:documentation "Destroy the application."))
 

@@ -2,6 +2,8 @@
   (:use #:cl)
   (:local-nicknames
    (:core :ai-project-tools/core)
+   (:alx :alexandria)
+   (:bt :bordeaux-threads)
    (:lp :lparallel)
    (:lpq :lparallel.queue))
   (:import-from #:ai-project-tools/core
@@ -33,6 +35,17 @@
    ;; classes
    #:runnable-application
    #:lparallel-application
+   ;; accessors
+   #:app-lock
+   #:max-iterations
+   #:iteration-count
+   #:kernel
+   #:task-queue
+   #:task-queue-capacity
+   #:task-queue-timeout
+   ;; macros
+   #:with-app-lock-held
+
    ;; functions
    ;; #:init ;; just use initialize-instance
    #:destroy

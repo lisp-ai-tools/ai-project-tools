@@ -1,13 +1,5 @@
 (in-package #:ai-project-tools/core)
 
-(defmethod print-object ((object has-name) stream)
-  (format stream "Name: ~A~%" (name object))
-  (call-next-method))
-
-(defmethod print-object ((object has-description) stream)
-  (format stream "Description: ~A~%" (description object))
-  (call-next-method))
-
 (defmethod run :around ((runner realtime-timed-runnable) &rest args)
   (unwind-protect
        (progn

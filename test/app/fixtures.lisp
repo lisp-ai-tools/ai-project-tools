@@ -50,13 +50,13 @@
                              :project project
                              :metadata-store store
                              :max-iterations max-iterations
-                             :queue-timeout queue-timeout)))
+                             :task-queue-timeout queue-timeout)))
     (core:register-system-configuration :default (system-configuration app))
     (setf *in-mem-app-proj* project
           *in-mem-app-session* session
           *in-mem-app* app)
     (log:info "Created in-mem app ~a" app)
-    (ai-project-tools/core:run app project session)
+    (ai-project-tools/app:start app project session)
     app))
 
 ;; (make-in-mem-app)

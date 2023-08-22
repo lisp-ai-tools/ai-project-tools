@@ -1,11 +1,18 @@
 (in-package #:ai-project-tools/app)
 
 (defmethod start :before ((app run-loop-application) &rest args)
-  (when (running-p app)
-    (error "Cannot start application ~a because it is already running." app))
+  (log:info "Starting app ~a" app))
+
+(defmethod start :around ((app run-loop-application) &rest args)
+  (with-app-lock-held (app app-run-lock)
+    (when (running-p app)
+      (error "Cannot start application ~a because it is already running." app))
+   (call-next-method)))
 
 (defmethod start ((app run-loop-application) &rest args)
-  (apply #'run app args)))
+  (let ((app-thread (bt:make-thread (lambda () (apply #'run app args))
+                                    :name (format nil "~A-thread-run-loop" (name app)))))
+    (setf (app-thread app) app-thread)))
 
 (defun %shutdown-kernel (app)
   (log:info "Shutting down kernel for app ~a" app)
@@ -18,15 +25,19 @@
   (when (kernel app) (setf (kernel app) nil))
   (when (task-queue app) (setf (task-queue app) nil)))
 
+(defmethod stop :around ((app run-loop-application) &rest args)
+  (with-app-lock-held (app app-run-lock)
+    (if (not (running-p app))
+        (warn "Cannot stop application ~a because it is not running." app)
+        (call-next-method))))
+
 (defmethod stop ((app run-loop-application) &rest args)
-  (if (running-p app)
-    (setf (running-p app) nil)
-    (warn "Cannot stop application ~a because it is not running. Ignoring..." app)))
+  (when (running-p app)
+    (setf (running-p app) nil)))
 
 (defmethod stop ((app base-lparallel-application) &rest args)
-  (if (running-p app)
-    (%shutdown-kernel app)
-    (warn "Cannot stop application ~a because it is not running. Ignoring..." app)))
+  (when (running-p app)
+    (%shutdown-kernel app)))
 
 (defun %kernel-run-task (task &key result-channel)
   (let ((result-channel (or result-channel (lp:make-channel))))
@@ -46,12 +57,9 @@
     (error "Cannot process task queue in application ~a because it is not running." app)))
 
 (defmethod process-task-queue ((app base-lparallel-application) &rest args)
-  (multiple-value-bind (new-task no-timeout-p) (lpq:try-pop-queue (task-queue app) :timeout (task-queue-timeout app))
-    (incf *iterations*)
+  (multiple-value-bind (new-task no-timeout-p) (lpq:try-pop-queue (task-queue app)
+                                                                  :timeout (task-queue-timeout app))
     (if (not no-timeout-p)
-        (progn
-          (incf *queue-timeouts*)
-        (log:info "App task queue timeout. *Iterations*: ~a. Queue timeouts: ~a" *iterations* *queue-timeouts*))
         (if (eq new-task :stop)
             (progn
               (log:info "Got :STOP in task-queue. Stopping app ~a" app)
@@ -64,24 +72,22 @@
                         (%kernel-run-task task :result-channel result-channel)))
                 (function (%kernel-run-task new-task))))))))
 
-(defmethod should-continue-running-p ((app base-lparallel-application) &rest args)
-  (and (running-p app) (if (negative (max-iterations app))
-                           t
-                           (< (iteration-count app) (max-iterations app)))))
+(defmethod should-continue-running-p ((app run-loop-application))
+  (and (running-p app)
+       (if (alx:negative-fixnum-p (max-iterations app))
+           t
+           (< (iteration-count app) (max-iterations app)))))
+
+(defmethod run-loop-step :before ((app run-loop-application) &rest args)
+  (incf (iteration-count app)))
 
 (defmethod run-loop-step :around ((app base-lparallel-application) &rest args)
   (if (should-continue-running-p app)
       (call-next-method)
-      (progn
-        (log:info "App ~a should no longer run. Shutting down..." app)
-        (%shutdown-app app))))
+      (log:info "App ~a should no longer run. Shutting down..." app)))
 
 (defmethod run-loop-step ((app base-lparallel-application) &rest args)
   (process-task-queue app))
-
-(defmethod run :before ((app run-loop-application) &rest args)
-  (when (running-p app)
-    (error "Cannot run application ~a because it is already running!" app)))
 
 (defmethod run :around ((app base-lparallel-application)
                                               &rest args
@@ -94,9 +100,7 @@
               (*root-metadata-store* (metadata-store app))
               (*current-metadata-store* (metadata-store app))
               (*current-project* project)
-              (*current-session* session)
-              (*iterations* 0)
-              (*queue-timeouts* 0))
+              (*current-session* session))
          (setf (kernel app) (lp:make-kernel 8 :name (format nil "~a-kernel" (name app))
                                               :bindings `((*current-application* . ,*current-application*)
                                                           (*current-system-configuration* . ,*current-system-configuration*)
@@ -108,9 +112,9 @@
                (task-queue app) (lpq:make-queue :fixed-capacity (task-queue-capacity app))
                (running-p app) t)
          (call-next-method))
-    (progn (%shutdown-app app)
+    (progn (%shutdown-kernel app)
            (log:info "App ~a shut down. DONE." app))))
 
-(defmethod run ((app run-loop-application) &rest args
+(defmethod run ((app run-loop-application) &rest args)
   (loop :while (should-continue-running-p app)
         :do (run-loop-step app)))
