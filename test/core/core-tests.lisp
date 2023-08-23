@@ -52,7 +52,7 @@
       ;; Check raw hash-table lookup on root-store
       (is (string= "bar"
                    (gethash expected-session-foo-key (store root-store))))
-      ;; Check has-metadata-store protocol delegation on session object
+      ;; Check has-metadata-store protocol delegation on session object
       (is (string= "bar" (lookup session "foo")))
       ;; Check that the hashtable count are the same
       (is (= 1

@@ -69,3 +69,109 @@
     (values config store project session
             projects-store project-store
             sessions-store session-store)))
+
+(defvar *test-scoped-hash-table* nil)
+
+(defun setup-scoped-hash-table ()
+  (let ((entries '(("/a" . 1)
+                   ("/a/b" . 2)
+                   ("/a/c" . 3)
+                   ("/a/b/d" . 4)
+                   ("/a/c/e" . 5)
+                   ("/a/b/f" . 6)
+                   ("/a/c/g" . 7)
+                   ("/a/b/d/h" . 8)
+                   ("/a/c/e/i" . 9)
+                   ("/a/b/f/j" . 10)
+                   ("/a/c/g/k" . 11))))
+    (setf *test-scoped-hash-table* (alexandria:alist-hash-table entries))
+    *test-scoped-hash-table*))
+
+;; (ql:quickload :split-sequence)
+;; Get direct children of a store
+(defun %path-segs (key &optional (separator-string "/"))
+  (split-sequence:split-sequence
+   separator-string
+   (string-left-trim separator-string key) :test #'string=))
+;; (string-left-trim "/" "/a/b/c")
+;; (%path-segs "/a/b/c")
+;; => ("a" "b" "c")
+;; (butlast (%path-segs "/a/b/c"))
+;; (butlast (%path-segs "/a"))
+;; (every #'string= '("a" "b" "c") (%path-segs "/a/b/c"))
+
+(defun direct-child-path-p (prefix key)
+  (let ((prefix-segs (%path-segs prefix))
+        (key-segs (%path-segs key)))
+    (and (= (1+ (length prefix-segs)) (length key-segs))
+         (every #'string= prefix-segs (butlast key-segs)))))
+
+(defun get-direct-children (table prefix)
+  (let ((prefix-children nil))
+    (maphash (lambda (key value)
+               (when (direct-child-path-p prefix key)
+                 (push (cons key value) prefix-children)))
+             table)
+    prefix-children))
+;; (get-direct-children *test-scoped-hash-table* "/a/b")
+
+;; Get direct children of a store that match a predicate
+(defun get-direct-children-matching (table prefix pred-fn)
+  (let ((prefix-children nil))
+    (maphash (lambda (key value)
+               (when (and (direct-child-path-p prefix key)
+                          (funcall pred-fn value))
+                 (push (cons key value) prefix-children)))
+             table)
+    prefix-children))
+
+;; Get all descendants of a prefix
+(defun get-subtree (table prefix)
+  (let ((descendants nil))
+    (maphash (lambda (key value)
+               (when (search prefix key)
+                 (push (cons key value) descendants)))
+             table)
+    descendants))
+;; (get-subtree *test-scoped-hash-table* "/a/b")
+
+;; Get all descendants of a prefix that match a predicate
+(defun get-subtree-matching (table prefix pred-fn)
+  (let ((descendants nil))
+    (maphash (lambda (key value)
+               (when (and (search prefix key)
+                          (funcall pred-fn value))
+                 (push (cons key value) descendants)))
+             table)
+    descendants))
+;; (get-subtree-matching *test-scoped-hash-table* "/a/b" (lambda (value) (< value 6)))
+
+;; Clear direct children of a store, leaving siblings intact
+(defun discard-direct-children (table prefix)
+  (maphash (lambda (key value)
+             (when (direct-child-path-p prefix key)
+               (remhash key table)))
+           table))
+;; (discard-direct-children *test-scoped-hash-table* "/a/b")
+
+;; Clear all descendants of a prefix
+(defun discard-subtree (table prefix)
+  (maphash (lambda (key value)
+             (when (search prefix key)
+               (remhash key table)))
+           table))
+;; (discard-subtree *test-scoped-hash-table* "/a/b")
+
+;; (setup-scoped-hash-table)
+
+;; Scoped hash-table operators
+
+
+;; Get all direct children of a store
+;; (defun get-direct-children (prefix table)
+;;   )
+
+;; Get all direct children of a store that match a predicate
+
+
+;; Clear all direct children of a store, leaving siblings intact
