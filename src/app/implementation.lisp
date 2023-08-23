@@ -12,7 +12,7 @@
    (call-next-method)))
 
 (defmethod start ((app run-loop-application) &rest args)
-  (declare (ignore args))
+  ;; (declare (ignore args))
   (let ((app-thread (bt:make-thread (lambda () (apply #'run app args))
                                     :name (format nil "~A-thread-run-loop" (name app)))))
     (setf (app-thread app) app-thread)))
@@ -56,7 +56,8 @@
                     (lambda ()
                       (let ((result (funcall task)))
                         result)))
-    (lp:receive-result result-channel)))
+    ;; (lp:receive-result result-channel)
+    ))
 
 (defmethod run-task ((app base-lparallel-application) task &rest args &key result-channel)
   (declare (ignore args))
@@ -112,6 +113,7 @@
                                                 (project (project app) project-supplied-p)
                                                 (session nil session-supplied-p))
   (declare (ignore args))
+  (log:info "LPARALLEL-APPLICATION RUN args: ~a" args)
   (unwind-protect
        (let* ((*current-application* app)
               (*current-system-configuration* (system-configuration app))
@@ -119,6 +121,7 @@
               (*current-metadata-store* (metadata-store app))
               (*current-project* project)
               (*current-session* session))
+         (log:info "ROOT-METADATA-STORE: ~a" *root-metadata-store*)
          (setf (kernel app) (lp:make-kernel 8 :name (format nil "~a-kernel" (name app))
                                               :bindings `((*current-application* . ,*current-application*)
                                                           (*current-system-configuration* . ,*current-system-configuration*)

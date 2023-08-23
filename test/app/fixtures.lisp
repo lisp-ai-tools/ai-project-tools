@@ -56,7 +56,7 @@
           *in-mem-app-session* session
           *in-mem-app* app)
     (log:info "Created in-mem app ~a" app)
-    (when start (ai-project-tools/app:start app project session))
+    (when start (ai-project-tools/app:start app :project project :session session))
     app))
 
 ;; (make-in-mem-app)

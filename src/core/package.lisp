@@ -7,6 +7,8 @@
    *ai-project-tools-version*
    *current-application*
    *current-system-configuration*
+   *current-metadata-store*
+   *root-metadata-store*
    *current-project*
    *current-session*
 
