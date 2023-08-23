@@ -74,6 +74,7 @@
    #:outputs
    #:execution-node
    #:scope-delimeter
+   #:scope-path
    #:runs
 
    ;; functions

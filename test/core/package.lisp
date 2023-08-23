@@ -25,6 +25,7 @@
                 #:configuration
                 #:sessions
                 #:scope-delimeter
+                #:scope-path
                 ;; #:metadata-store
                 #:execution-events
                 #:store

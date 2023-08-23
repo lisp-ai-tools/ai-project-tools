@@ -1,6 +1,7 @@
 (in-package #:ai-project-tools/app-tests)
 
-(def-suite ai-project-tools/app-tests-suite :in ai-project-tools/tests:ai-project-tools/tests-suite)
+(def-suite ai-project-tools/app-tests-suite
+  :in ai-project-tools/tests:ai-project-tools/tests-suite)
 
 (in-suite ai-project-tools/app-tests-suite)
 
@@ -41,8 +42,7 @@
     (is (= (app:iteration-count app) 1))
     (is (null (app:app-thread app)))
     (is (null (app:kernel app)))
-    (is (null (app:task-queue app)))
-    ))
+    (is (null (app:task-queue app)))))
 ;; (run! 'run-state-1)
 
 
@@ -87,11 +87,8 @@
       ;; (let ((specials-str (lp:receive-result result-channel)))
       ;;   (log:info "Specials: ~a" specials-str))
       ))
-
     ;; outside of context of running app, those bindings should be unbound)
-    (is-false (check-app-specials))
-    ;; (log-app-specials-to-string)
-  )
+    (is-false (check-app-specials)))
 
 ;; (run! 'base-lparallel-app-bindings)
 ;; (check-app-specials)
@@ -146,4 +143,3 @@
                      (log:info "Sleepy task start...")
                      (sleep 1)
                      (log:info "Sleepy task end..."))))
-

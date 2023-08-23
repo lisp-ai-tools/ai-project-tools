@@ -77,6 +77,7 @@
                (:module "test/core"
                 :components
                 ((:file "package")
+                 (:file "fixtures")
                  (:file "core-tests"))))
   :perform (test-op (op c)
                     (uiop:symbol-call

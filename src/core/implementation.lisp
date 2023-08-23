@@ -157,8 +157,10 @@
     (setf (children parent) (pushnew scoped-store (children parent))
           (scope-path scoped-store) (scoped-path scoped-store)
           (store scoped-store) (store parent))
-    (unless (store scoped-store)
-      (setf (store scoped-store) (make-hash-table :test 'equal)))))
+    (progn
+      (unless (store scoped-store)
+        (setf (store scoped-store) (make-hash-table :test 'equal)))
+      (setf (scope-path scoped-store) (scoped-path scoped-store)))))
 
 ;; has-metadata-store implementation
 (defmethod lookup ((store has-metadata-store) (key string) &rest args &key default)
