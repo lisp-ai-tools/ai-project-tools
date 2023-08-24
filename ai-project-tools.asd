@@ -38,14 +38,15 @@
   :author "Joel Boehland <jboehland@gmail.com>"
   :license "MIT"
   :serial t
-  :depends-on (:log4cl
-               :alexandria
-               :serapeum
-               :iterate
-               :closer-mop
-               :local-time
-               :ironclad
-               :lparallel)
+  :depends-on (#:log4cl
+               #:alexandria
+               #:serapeum
+               #:split-sequence
+               #:iterate
+               #:closer-mop
+               #:local-time
+               #:ironclad
+               #:lparallel)
   :components ((:module "src/core"
                 :components
                 ((:file "package")

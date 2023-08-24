@@ -123,6 +123,70 @@
   (clrhash (store store)))
 
 ;; Scoped metadata store implementation
+;; Auxillary functions for managing scoped hash table based implementation
+
+(defun %path-segs (key &optional (separator-string "/"))
+  (split-sequence:split-sequence
+   separator-string
+   (string-left-trim separator-string key) :test #'string=))
+
+(defun %direct-child-path-p (prefix key)
+  (let ((prefix-segs (%path-segs prefix))
+        (key-segs (%path-segs key)))
+    (and (= (1+ (length prefix-segs)) (length key-segs))
+         (every #'string= prefix-segs (butlast key-segs)))))
+
+(defun %get-direct-children (table prefix)
+  (let ((prefix-children nil))
+    (maphash (lambda (key value)
+               (when (%direct-child-path-p prefix key)
+                 (push (cons key value) prefix-children)))
+             table)
+    prefix-children))
+
+;; Get direct children of a store that match a predicate
+(defun %get-direct-children-matching (table prefix pred-fn)
+  (let ((prefix-children nil))
+    (maphash (lambda (key value)
+               (when (and (%direct-child-path-p prefix key)
+                          (funcall pred-fn value))
+                 (push (cons key value) prefix-children)))
+             table)
+    prefix-children))
+
+;; Get all descendants of a prefix
+(defun %get-subtree (table prefix)
+  (let ((descendants nil))
+    (maphash (lambda (key value)
+               (when (search prefix key)
+                 (push (cons key value) descendants)))
+             table)
+    descendants))
+
+;; Get all descendants of a prefix that match a predicate
+(defun %get-subtree-matching (table prefix pred-fn)
+  (let ((descendants nil))
+    (maphash (lambda (key value)
+               (when (and (search prefix key)
+                          (funcall pred-fn value))
+                 (push (cons key value) descendants)))
+             table)
+    descendants))
+
+;; Clear direct children of a store, leaving siblings intact
+(defun %discard-direct-children (table prefix)
+  (maphash (lambda (key value)
+             (when (%direct-child-path-p prefix key)
+               (remhash key table)))
+           table))
+
+;; Clear all descendants of a prefix
+(defun %discard-subtree (table prefix)
+  (maphash (lambda (key value)
+             (when (search prefix key)
+               (remhash key table)))
+           table))
+
 (defmethod scoped-path ((store scoped-metadata-store) &rest args)
   (declare (ignore args))
   (let* ((names-from-root (nreverse (loop :for current := store :then (parent current)

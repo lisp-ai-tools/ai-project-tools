@@ -86,6 +86,7 @@
                    ("/a/c/g/k" . 11))))
     (setf *test-scoped-hash-table* (alexandria:alist-hash-table entries))
     *test-scoped-hash-table*))
+;; (setup-scoped-hash-table)
 
 ;; (ql:quickload :split-sequence)
 ;; Get direct children of a store
@@ -161,17 +162,3 @@
                (remhash key table)))
            table))
 ;; (discard-subtree *test-scoped-hash-table* "/a/b")
-
-;; (setup-scoped-hash-table)
-
-;; Scoped hash-table operators
-
-
-;; Get all direct children of a store
-;; (defun get-direct-children (prefix table)
-;;   )
-
-;; Get all direct children of a store that match a predicate
-
-
-;; Clear all direct children of a store, leaving siblings intact
