@@ -75,6 +75,33 @@
     )))
 ;; (run! 'project-session-scoped-store-lookup-1)
 
+(test scoped-memory-store-scoping-rules-1
+  (let* ((scoped-ht (setup-scoped-hash-table))
+         (root-store (make-instance 'core::memory-scoped-metadata-store
+                                    :name "a"
+                                    :parent nil
+                                    :schema (list :fake :schema)
+                                    :store scoped-ht))
+         (b-store (make-instance 'core::memory-scoped-metadata-store
+                                 :name "b"
+                                 :parent root-store
+                                 :schema (list :fake :schema)))
+         (c-store (make-instance 'core::memory-scoped-metadata-store
+                                 :name "c"
+                                 :parent root-store
+                                 :schema (list :fake :schema))))
+    ;;XXX brittle magic numbers for the counts, but it's easy enough
+    ;; to check by eye the code for setup-scoped-hash-table
+    (is (= 11 (hash-table-count scoped-ht)))
+    (is (eq (core::parent b-store) root-store))
+    (is (eq (core::parent c-store) root-store))
+    (core::clear c-store)
+    ;; (log:info "After clearing c-store: ~a" (alexandria:hash-table-alist scoped-ht))
+    (is (= 6 (hash-table-count scoped-ht)))
+    (core::clear b-store)
+    (is (= 1 (hash-table-count scoped-ht)))))
+;; (run! 'scoped-memory-store-scoping-rules-1)
+
 ;; (ql:quickload '(:ai-project-tools :ai-project-tools/core-tests))
 ;; (run! 'ai-project-tools/core-tests-suite-exists)
 ;; (run! 'ai-project-tools/core-tests-suite)
