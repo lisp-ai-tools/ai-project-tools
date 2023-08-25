@@ -109,7 +109,9 @@
   (unless (and (slot-boundp session '%start-time) (start-time session))
     (setf (start-time session) (local-time:now))))
 
-;; Basic memory-metadata-store implementation
+;;
+;; Basic hash-table based flat memory-metadata-store implementation
+;;
 (defmethod lookup ((store simple-memory-metadata-store) key &rest args &key default)
   (gethash key (store store) default))
 
@@ -122,9 +124,11 @@
 (defmethod clear ((store metadata-store))
   (clrhash (store store)))
 
+;;
 ;; Scoped metadata store implementation
-;; Auxillary functions for managing scoped hash table based implementation
+;;
 
+;; Auxillary functions for managing scoped hash table based implementation
 (defun %path-segs (key &optional (separator-string "/"))
   (split-sequence:split-sequence
    separator-string

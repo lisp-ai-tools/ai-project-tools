@@ -242,9 +242,8 @@ project."))
     :documentation
     "The scope delimeter for this store.")
   (%scope-path
-   :initarg :scope-path
    :initform nil
-   :accessor scope-path
+   :reader scope-path
    :documentation
    "The scope path for this store."))
   (:documentation

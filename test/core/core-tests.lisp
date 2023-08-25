@@ -7,6 +7,18 @@
 (test ai-project-tools/core-tests-suite-exists
   (is-true t))
 
+(test scoped-memory-create-1
+  ;; Test that a child with different scope-delimeter signals an error
+  (signals simple-error
+    (let ((parent (make-instance 'scoped-metadata-store)))
+      (make-instance 'scoped-metadata-store :parent parent :scope-path "/foo")))
+  ;; Test that a child isn't provided it's own store, it should share with parent
+  (signals simple-error
+    (let ((parent (make-instance 'scoped-metadata-store)))
+      (make-instance 'scoped-metadata-store :parent parent
+                                            :store (make-hash-table :test 'equal)))))
+;; (run! 'scoped-memory-create-1)
+
 ;; memory-store/scoped-memory-store tests
 (test project-session-scoped-store-create-1
   (multiple-value-bind (config root-store project session

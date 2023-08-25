@@ -54,6 +54,7 @@
                  (:file "utilities")
                  (:file "datatype-definitions")
                  (:file "protocols")
+                 (:file "memory-store")
                  (:file "implementation"))))
   :in-order-to ((test-op (load-op "ai-project-tools/core-tests")))
   :perform (test-op (op c)
