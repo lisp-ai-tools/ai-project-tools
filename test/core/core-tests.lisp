@@ -92,6 +92,9 @@
                                  :schema (list :fake :schema))))
     ;;XXX brittle magic numbers for the counts, but it's easy enough
     ;; to check by eye the code for setup-scoped-hash-table
+    ;; (log:info "Fresh scoped-ht: ~a" (alexandria:hash-table-alist scoped-ht))
+    (is (eq (parent b-store) root-store))
+    (is (eq (parent c-store) root-store))
     (is (= 11 (hash-table-count scoped-ht)))
     (is (eq (core::parent b-store) root-store))
     (is (eq (core::parent c-store) root-store))
@@ -99,6 +102,7 @@
     ;; (log:info "After clearing c-store: ~a" (alexandria:hash-table-alist scoped-ht))
     (is (= 6 (hash-table-count scoped-ht)))
     (core::clear b-store)
+    ;; (log:info "After clearing b-store: ~a" (alexandria:hash-table-alist scoped-ht))
     (is (= 1 (hash-table-count scoped-ht)))))
 ;; (run! 'scoped-memory-store-scoping-rules-1)
 

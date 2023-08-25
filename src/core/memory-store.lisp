@@ -109,6 +109,12 @@
   (let ((scoped-key (scoped-key-name store key-string)))
     (remhash scoped-key (store store))))
 
+(defmethod clear ((store memory-scoped-metadata-store))
+  (if (not (parent store))
+    (clrhash (store store))
+    (progn
+      (%discard-subtree (store store) (scoped-path store)))))
+
 (defmethod initialize-instance :after ((scoped-store scoped-metadata-store)
                                        &key schema (store nil store-provided-p)
                                          (scope-delimeter nil scope-delimeter-provided-p)
@@ -118,9 +124,9 @@
                       scope-delimeter-provided-p parent-provided-p))
   (if parent
       (progn
-        (when (store-provided-p scoped-store)
+        (when store-provided-p
           (error "Cannot provide store when parent is provided. This store will use parent's store instead"))
-        (when (not (string= (scope-delimeter parent) scope-delimeter))
+        (when (not (string= (scope-delimeter parent) (scope-delimeter scoped-store)))
           (error "Scope delimeter mismatch between parent and child scoped store"))
         (setf (children parent) (pushnew scoped-store (children parent))
               (store scoped-store) (store parent)
@@ -130,7 +136,7 @@
         (setf (store scoped-store) (make-hash-table :test 'equal)))
       (setf (scope-path scoped-store) (scoped-path scoped-store)))))
 
-;; has-metadata-store implementation
+;; has-metadata-store implementation -- containing object acts as a proxy
 (defmethod lookup ((store has-metadata-store) (key string) &rest args &key default)
   (lookup (metadata-store store) key :default default))
 (defmethod (setf lookup) (value (store has-metadata-store) (key string))

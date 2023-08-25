@@ -185,7 +185,7 @@ scope of their execution/run encmpasses that of their children as well."))
     :initarg :execution-node 
     :initform nil
     :accessor execution-node
-    :type (or nil execution-node)
+    :type (or null execution-node)
     :documentation
     "The execution-node that consumed/produced the artifacts for this execution-event
 record."))
@@ -243,7 +243,7 @@ project."))
     "The scope delimeter for this store.")
   (%scope-path
    :initform nil
-   :reader scope-path
+   :accessor scope-path
    :documentation
    "The scope path for this store."))
   (:documentation
