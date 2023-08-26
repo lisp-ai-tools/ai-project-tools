@@ -46,36 +46,6 @@
 ;; (run! 'run-state-1)
 
 
-(defparameter *app-specials* (list 'core::*current-application*
-                                   'core::*current-system-configuration*
-                                   'core::*current-metadata-store*
-                                   'core::*root-metadata-store*
-                                   'core::*current-project*
-                                   'core::*current-session*))
-
-(defun symbol-bound-and-not-null (sym)
-  (and (boundp sym) (not (null (symbol-value sym)))))
-
-(defun do-app-specials (fn)
-  (dolist (x *app-specials*)
-    (funcall fn x)))
-
-(defun map-app-specials (fn)
-  (mapcar fn *app-specials*))
-
-(defun check-app-specials ()
-  (every #'symbol-bound-and-not-null *app-specials*))
-
-(defun log-app-specials ()
-  (loop for x in *app-specials*
-        do (log:info "Symbol ~a bound to ~a" x (symbol-value x))))
-
-(defun log-app-specials-to-string ()
-  (with-output-to-string (s)
-    (loop for x in *app-specials*
-          do (format s "Symbol ~a bound to ~a ~%" x (symbol-value x)))
-    s))
-
 (test base-lparallel-app-bindings
   (let ((app (make-in-mem-app :start t :max-iterations 1)))
     (app:wait-for-app-start app)
