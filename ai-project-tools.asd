@@ -45,8 +45,10 @@
                #:iterate
                #:closer-mop
                #:local-time
+               #:fset
                #:ironclad
-               #:lparallel)
+               #:lparallel
+               #:journal)
   :components ((:module "src/core"
                 :components
                 ((:file "package")

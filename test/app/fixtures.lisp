@@ -7,39 +7,6 @@
 ;;(describe *in-mem-app*)
 ;;(scoped-path (metadata-store (project *in-mem-app*)))
 
-(defclass simple-chat-app (base-lparallel-application) ())
-
-(defclass mock-chat-app (simple-chat-app)
-  ((%prompts
-    :initarg :prompts
-    :initform ()
-    :accessor prompts
-    :type list
-    :documentation "A list of prompts to be used by the mock client.")
-   (%prompt-responses
-    :initarg :prompt-responses
-    :initform ()
-    :accessor prompt-responses
-    :type list
-    :documentation "A list of responses to be used by the mock client.")))
-
-(defclass mock-remote-llm-client (core:execution-node) ())
-(defclass mock-remote-llm-interaction (core:execution-event)
-  ((%client
-    :initarg :client
-    :initform (error "No client provided.")
-    :accessor client)))
-
-(defun make-mock-remote-llm-interaction (client)
-  (make-instance 'mock-remote-llm-interaction
-                 :client client
-                 :input-keys (list :message-history :prompt
-                                   :raw-chat-completion-request-message :raw-http-request)
-                 :output-keys (list :message-history :prompt-response
-                                    :raw-chat-completion-response-message :raw-http-response)))
-#+(or) (defparameter *llm-interaction*
-         (make-mock-remote-llm-interaction (make-instance 'mock-remote-llm-client)))
-
 (defun %make-raw-chat-completion-request-message (prompt
                                                   &key (message-history nil))
        (list :prompt prompt :message-id "1234" :message-history message-history))
@@ -51,7 +18,6 @@
 
 (defun make-raw-http-request (message-payload)
   (format nil "POST /chat HTTP/1.1~%Content-Type: application/json~%~%~a"
-          ;; (json:encode-json-to-string message-payload)
           "{
             \"prompt\": \"Hello, world!\",
             \"message-id\": \"1234\",
@@ -61,7 +27,6 @@
 
 (defun make-raw-http-response (message-payload)
   (format nil "HTTP/1.1 200 OK~%Content-Type: application/json~%~%~a"
-          ;; (json:encode-json-to-string message-payload)
           "{
             \"prompt-response\": \"Hello, world!\",
             \"message-id\": \"1234\",
@@ -69,8 +34,68 @@
           }"
           ))
 
+(defclass mock-chat-app (simple-chat-app)
+  ())
 
-(defun %run-one-mock-llm-interaction (app prompt prompt-response)
+(defclass llm-configuration (core:configuration-set) ())
+(defclass remote-llm-client (core:configuration-set) ())
+(defclass remote-llm-configuration (llm-configuration)
+  ((%client
+    :initarg :client
+    :initform (error "No client provided.")
+    :accessor client
+    :type mock-remote-llm-client)))
+
+(defclass remote-llm-interaction (core:execution-node) ())
+
+(defun make-mock-remote-llm-interaction-event (&key (session *current-session*))
+  (make-instance 'core:execution-event
+                 :session session
+                 :input-keys (list
+                              :llm-configuration
+                              :message-history
+                              :prompt
+                              :raw-chat-completion-request-message
+                              :raw-http-request)
+                 :output-keys (list
+                               :start-time
+                               :end-time
+                               :duration
+                               :message-history
+                               :prompt-response
+                               :raw-chat-completion-response-message
+                               :raw-http-response)))
+
+(defgeneric build-completion-request-payload (llm prompt format-designator &rest args)
+  (:documentation
+   "Build a completion request payload for the given LLM in the given format (JSON,
+XML, YAML etc.)."))
+
+(defclass simple-chat-app (base-lparallel-application)
+  ((%llm-configuration
+    :initarg :llm-configuration
+    :initform (error "No llm-configuration provided.")
+    :accessor llm-configuration
+    :documentation "The llm-configuration to be used by the app."))
+  (:documentation
+   "A simple chat app. This is an app that uses a single remote LLM endoint with a
+default configuration. It also contains a remote client that can speak to the
+various LLM endpoints."))
+
+(defgeneric %chat (app prompt &rest args)
+  (:documentation "A generic function for chatting with the LLM."))
+
+(defmethod %chat ((app simple-chat-app) prompt &rest args))
+
+(defmethod %chat ((app mock-chat-app) prompt &rest args)
+  ;; Note -- the args could be used to alter the configuration of the LLM.
+  (let* ((llm-interaction )))
+
+
+#+(or) (defparameter *llm-interaction*
+         (make-mock-remote-llm-interaction (make-instance 'mock-remote-llm-client)))
+
+#+(or)(defun %run-one-mock-llm-interaction (app prompt prompt-response)
   (let*  ((llm-client (make-instance 'mock-remote-llm-client))
           (llm-interaction (make-mock-remote-llm-interaction llm-client))
           (interaction-id-key (format nil "interaction-~a" (app:iteration-count app)))
@@ -183,10 +208,12 @@
       (when start (ai-project-tools/app:start app :project project :session session))
       app)))
 
-(defun make-in-mem-chat-app (&key (start nil) prompts prompt-responses)
+(defun make-mock-in-mem-chat-app (&key (start nil) prompts prompt-responses)
   (let ((app (make-in-mem-app :app-class 'mock-chat-app :start nil)))
-    (setf (prompts app) prompts
-          (prompt-responses app) prompt-responses)
+    ;; (setf (prompts app) prompts
+    ;;       (prompt-responses app) prompt-responses)
+    (setf (core:lookup session interaction-id-key "prompts") prompts
+          (core:lookup session interaction-id-key "prompt-responses") prompt-responses)
     (when start
       (ai-project-tools/app:start app
                                   :project *in-mem-app-proj*

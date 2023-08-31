@@ -40,6 +40,7 @@
    #:execution-tree-node
 
    ;; Core system runtime container types
+   #:configuration-set
    #:metadata-store
    #:scoped-metadata-store
    #:metadata-schema

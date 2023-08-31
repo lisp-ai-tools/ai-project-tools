@@ -154,7 +154,7 @@ deployment. The product of an execution is one or more artifact."))
    "Base marker class for all execution tree-nodes. Nodes that are composites. The
 scope of their execution/run encmpasses that of their children as well."))
 
-(defclass execution-event (has-data has-metadata belongs-to-session timed)
+(defclass execution-event (has-data has-metadata belongs-to-session)
   ((%input-keys 
     :initarg :input-keys 
     :initform (error "Must supply one or more input keys.")
