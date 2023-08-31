@@ -89,7 +89,7 @@ various LLM endpoints."))
 
 (defmethod %chat ((app mock-chat-app) prompt &rest args)
   ;; Note -- the args could be used to alter the configuration of the LLM.
-  (let* ((llm-interaction )))
+  (let* ((llm-interaction (make-instance 'mock-remote-llm-client))))
 
 
 #+(or) (defparameter *llm-interaction*
