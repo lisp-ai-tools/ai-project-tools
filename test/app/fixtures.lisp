@@ -34,9 +34,6 @@
           }"
           ))
 
-(defclass mock-chat-app (simple-chat-app)
-  ())
-
 (defclass llm-configuration (core:configuration-set) ())
 (defclass remote-llm-client (core:configuration-set) ())
 (defclass remote-llm-configuration (llm-configuration)
@@ -44,11 +41,14 @@
     :initarg :client
     :initform (error "No client provided.")
     :accessor client
-    :type mock-remote-llm-client)))
+    :type remote-llm-client)))
 
+(defun make-mock-llm-configuration (&key (client (make-instance 'remote-llm-client)))
+  (make-instance 'remote-llm-configuration :client client))
+;; (make-mock-llm-configuration)
 (defclass remote-llm-interaction (core:execution-node) ())
 
-(defun make-mock-remote-llm-interaction-event (&key (session *current-session*))
+(defun make-mock-remote-llm-interaction-event (&key (session core:*current-session*))
   (make-instance 'core:execution-event
                  :session session
                  :input-keys (list
@@ -74,13 +74,51 @@ XML, YAML etc.)."))
 (defclass simple-chat-app (base-lparallel-application)
   ((%llm-configuration
     :initarg :llm-configuration
-    :initform (error "No llm-configuration provided.")
+    :initform nil
     :accessor llm-configuration
     :documentation "The llm-configuration to be used by the app."))
   (:documentation
    "A simple chat app. This is an app that uses a single remote LLM endoint with a
 default configuration. It also contains a remote client that can speak to the
 various LLM endpoints."))
+
+(defclass mock-chat-app (simple-chat-app)
+  ())
+
+(defun %get-prompts ()
+  (alexandria:when-let ((session (when (boundp 'core:*current-session*)
+                                   core:*current-session*)))
+    (core:lookup session "prompts")))
+;;(%get-prompts)
+(defun %get-prompt-responses ()
+  (alexandria:when-let ((session (when (boundp 'core:*current-session*)
+                                   core:*current-session*)))
+    (core:lookup session "prompt-responses")))
+
+(defun %get-prompt-at-index (index)
+  (alexandria:when-let ((prompts (%get-prompts)))
+    (nth index prompts)))
+;;(%get-prompt-at-index 0)
+(defun %get-prompt-response-at-index (index)
+  (alexandria:when-let ((prompt-responses (%get-prompt-responses)))
+    (nth index prompt-responses)))
+
+(defun %get-prompts-length ()
+  (let ((prompts (%get-prompts))
+        (prompt-responses (%get-prompt-responses)))
+    (if (and prompts prompt-responses)
+        (min (length prompts) (length prompt-responses))
+        0)))
+
+;;(%get-prompts-length)
+(defun %get-history (current-iteration)
+  (let ((prompts (%get-prompts))
+        (prompt-responses (%get-prompt-responses)))
+    (when (and prompts prompt-responses)
+      (loop :for i :from 0 :below (min (length prompts) (length prompt-responses) current-iteration)
+            :if (and (nth i prompts) (nth i prompt-responses))
+            :collect (list (nth i prompts) (nth i prompt-responses))))))
+;;(%get-history 0)
 
 (defgeneric %chat (app prompt &rest args)
   (:documentation "A generic function for chatting with the LLM."))
@@ -89,59 +127,32 @@ various LLM endpoints."))
 
 (defmethod %chat ((app mock-chat-app) prompt &rest args)
   ;; Note -- the args could be used to alter the configuration of the LLM.
-  (let* ((llm-interaction (make-instance 'mock-remote-llm-client))))
-
-
-#+(or) (defparameter *llm-interaction*
-         (make-mock-remote-llm-interaction (make-instance 'mock-remote-llm-client)))
-
-#+(or)(defun %run-one-mock-llm-interaction (app prompt prompt-response)
-  (let*  ((llm-client (make-instance 'mock-remote-llm-client))
-          (llm-interaction (make-mock-remote-llm-interaction llm-client))
-          (interaction-id-key (format nil "interaction-~a" (app:iteration-count app)))
-          (message-history (list))
-          (raw-chat-completion-request-message
-            (%make-raw-chat-completion-request-message prompt))
-          (raw-chat-completion-response-message
-            (%make-raw-chat-completion-response-message prompt-response))
-          (raw-http-request (make-raw-http-request raw-chat-completion-request-message))
-          (raw-http-response (make-raw-http-response raw-chat-completion-response-message)))
-    (setf (core:inputs llm-interaction) (list :message-history message-history
-                                              :prompt prompt
-                                              :raw-chat-completion-request-message
-                                              raw-chat-completion-request-message
-                                              :raw-http-request
-                                              raw-http-request)
-          (core:outputs llm-interaction) (list :message-history message-history
-                                               :prompt-response
-                                               :raw-chat-completion-response-message
-                                               raw-chat-completion-response-message
-                                               :raw-http-response
-                                               raw-http-response)
-          (core:lookup *in-mem-app-session* interaction-id-key) llm-interaction)))
+  (let* ((llm-interaction-event (make-mock-remote-llm-interaction-event))
+         (iteration-count (app:iteration-count app))
+         (history (%get-history iteration-count))
+         (prompt-response (%get-prompt-response-at-index iteration-count)))
+    (log:info "Iteration count: ~a, history: ~a, prompt: ~a, prompt-response: ~a"
+              iteration-count history prompt prompt-response)
+    llm-interaction-event))
 
 (defmethod app:should-continue-running-p ((app mock-chat-app))
   (call-next-method)
   (let ((it-count (app:iteration-count app))
-        (prompts-len (length (prompts app)))
-        (prompt-responses-len (length (prompt-responses app))))
-  (log:info "(< it-count ~a (1- (min prompts-len prompt-responses-len))) => ~a"
-            it-count (< it-count (1- (min prompts-len prompt-responses-len))))
-  (< it-count (1- (min prompts-len prompt-responses-len)))))
+        (prompts-len (%get-prompts-length)))
+  (log:info "it-count ~a prompts-len: => ~a, SHOULD?: ~a"
+            it-count prompts-len (< it-count (1- prompts-len)))
+    (< it-count (1- prompts-len))))
 
 (defmethod run-loop-step ((app mock-chat-app) &rest args)
   (declare (ignore args))
-  (let ((prompt (nth (app:iteration-count app) (prompts app)))
-        (prompt-response (nth (app:iteration-count app) (prompt-responses app))))
-    (log:info "Prompt: ~a" prompt)
-    (log:info "Prompt response: ~a" prompt-response)
-    (app:run-task app
-                  (lambda () (%run-one-mock-llm-interaction app prompt prompt-response)))
-    (app:process-task-queue app)))
+  (let ((prompt (%get-prompt-at-index (app:iteration-count app)))
+        (result-channel (lp:make-channel)))
+    (app:run-task app (lambda () (%chat app prompt)) :result-channel result-channel)
+    (app:process-task-queue app)
+    (lp:receive-result result-channel)))
 
 (defmethod core:run :around ((app mock-chat-app) &rest args)
   (declare (ignore args))
-
   (call-next-method))
 
 (defun make-basic-in-mem-app-context ()
@@ -209,11 +220,12 @@ various LLM endpoints."))
       app)))
 
 (defun make-mock-in-mem-chat-app (&key (start nil) prompts prompt-responses)
-  (let ((app (make-in-mem-app :app-class 'mock-chat-app :start nil)))
-    ;; (setf (prompts app) prompts
-    ;;       (prompt-responses app) prompt-responses)
-    (setf (core:lookup session interaction-id-key "prompts") prompts
-          (core:lookup session interaction-id-key "prompt-responses") prompt-responses)
+  (let ((app (make-in-mem-app :app-class 'mock-chat-app :start nil))
+        (llm-configuration (make-mock-llm-configuration))
+        (session *in-mem-app-session*))
+    (setf (core:lookup session "prompts") prompts
+          (core:lookup session "prompt-responses") prompt-responses
+          (llm-configuration app) llm-configuration)
     (when start
       (ai-project-tools/app:start app
                                   :project *in-mem-app-proj*
@@ -227,48 +239,15 @@ various LLM endpoints."))
                                           "Blue"
                                           "To seek the Holy Grail!"))
 ;; (make-in-mem-app)
-#+(or)(make-in-mem-chat-app :prompts *chat-prompts-1*
-                            :prompt-responses *chat-prompt-responses-1*)
+#+(or)(make-mock-in-mem-chat-app :prompts *chat-prompts-1*
+                                 :prompt-responses *chat-prompt-responses-1*
+                                 :start t)
+;; (make-mock-llm-configuration)
 #+(or)(ai-project-tools/app:start *in-mem-app*
                                   :project *in-mem-app-proj*
                                   :session *in-mem-app-session*)
 ;; (run-task *in-mem-app* (lambda () (log:info "Running this task in app ~a" core:*current-application*)))
-;; (run-task *in-mem-app* (lambda () (error "Error to induce quit.")))
 ;; (stop *in-mem-app*)
 ;; (setf (running-p *in-mem-app*) nil)
-;; (running-p *in-mem-app*)
+;; (app:running-p *in-mem-app*)
 ;; (%shutdown-app *in-mem-app*)
-(defparameter *app-specials* (list 'core::*current-application*
-                                   'core::*current-system-configuration*
-                                   'core::*current-metadata-store*
-                                   'core::*root-metadata-store*
-                                   'core::*current-project*
-                                   'core::*current-session*))
-
-(defun symbol-bound-and-not-null (sym)
-  (and (boundp sym) (not (null (symbol-value sym)))))
-
-(defun do-app-specials (fn)
-  (dolist (x *app-specials*)
-    (funcall fn x)))
-
-(defun map-app-specials (fn)
-  (mapcar fn *app-specials*))
-
-(defun check-app-specials ()
-  (every #'symbol-bound-and-not-null *app-specials*))
-
-(defun log-app-specials ()
-  (loop for x in *app-specials*
-        do (log:info "Symbol ~a bound to ~a" x (symbol-value x))))
-
-(defun log-app-specials-to-string ()
-  (with-output-to-string (s)
-    (loop for x in *app-specials*
-          do (format s "Symbol ~a bound to ~a ~%" x (symbol-value x)))
-    s))
-
-#+(or)(setf *iterations* 0
-            *queue-timeouts* 0)
-;; (setf (lookup *in-mem-app-session* "some-session-key") "BLAH")
-;; (lookup *in-mem-app-session* "some-session-key")

@@ -145,3 +145,56 @@
     (discard (metadata-store store) key))
 (defmethod clear ((store has-metadata-store))
     (clear (metadata-store store)))
+
+(defun %generate-new-scope-name ()
+  "Generate a random name for the new scope based on timestamp"
+  (let ((timestamp (get-internal-real-time)))
+    (format nil "scope-~a" timestamp)))
+;;(%generate-new-scope-name)
+
+(defun call-with-new-metadata-scope (thunk
+                                     &key
+                                       (scope-name nil scope-name-provided-p)
+                                       (schema '(:fake schema)))
+  (let* ((parent-scope (or *current-metadata-store* (error "No current metadata store")))
+        (new-scope-name (if scope-name-provided-p scope-name (%generate-new-scope-name)))
+        (new-scope (make-instance 'scoped-metadata-store
+                                  :parent parent-scope
+                                  :name new-scope-name
+                                  :schema schema)))
+    (let ((*current-metadata-store* new-scope))
+      (funcall thunk))))
+
+(defmacro with-new-metadata-scope ((&key
+                                      (scope-name nil scope-name-provided-p)
+                                      (schema '(:fake schema)))
+                                   &body body)
+  `(call-with-new-metadata-scope
+    (lambda () ,@body)
+    ,@(when scope-name-provided-p :scope-name `,scope-name)))
+
+(defun call-with-root-metadata-scope (thunk
+                                      &key
+                                        (scope-name nil scope-name-provided-p)
+                                        (schema '(:fake schema)))
+  (let* ((new-scope-name (if scope-name-provided-p scope-name "root"))
+        (new-scope (make-instance 'scoped-metadata-store
+                                  :parent nil
+                                  :name new-scope-name
+                                  :schema schema)))
+    (let ((*root-metadata-store* new-scope)
+          (*current-metadata-store* new-scope))
+      (funcall thunk))))
+
+(defmacro with-root-metadata-scope ((&key
+                                       (scope-name nil scope-name-provided-p)
+                                       (schema '(:fake schema)))
+                                    &body body)
+  `(call-with-root-metadata-scope
+    (lambda () ,@body)
+    ,@(when scope-name-provided-p :scope-name `,scope-name)))
+
+#+(or)
+(with-root-metadata-scope ()
+  (with-new-metadata-scope ()
+    (log:info "My scope is ~a" (scoped-path *current-metadata-store*))))

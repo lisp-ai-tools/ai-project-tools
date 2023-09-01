@@ -97,11 +97,11 @@
   (declare (ignore args))
   (incf (iteration-count app)))
 
-(defmethod run-loop-step :around ((app base-lparallel-application) &rest args)
-  (declare (ignore args))
-  (if (should-continue-running-p app)
-      (call-next-method)
-      (log:info "App ~a should no longer run. Shutting down..." app)))
+;; (defmethod run-loop-step :around ((app base-lparallel-application) &rest args)
+;;   (declare (ignore args))
+;;   (if (should-continue-running-p app)
+;;       (call-next-method)
+;;       (log:info "App ~a should no longer run. Shutting down..." app)))
 
 (defmethod run-loop-step ((app base-lparallel-application) &rest args)
   (declare (ignore args))
