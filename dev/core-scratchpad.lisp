@@ -3,55 +3,44 @@
 (defvar *test-app* nil)
 
 (defclass test-parent-task-node (execution-tree-node has-name) ())
-(defclass test-child-task-node (execution-node has-name) ())
+(defclass test-child-task-node (execution-node has-name)
+  ((transform-fn :initarg :transform-fn :accessor transform-fn)))
 
-(defun %make-test-parent-task-node ()
-  (make-instance 'test-parent-task-node
-                 :name "parent"
-                 :children (list (make-instance 'test-child-task-node
-                                                :name "child-a"
-                                                :input-keys '("KEY-child-a")
-                                                :output-keys '("VAL-child-a"))
-                                 (make-instance 'test-child-task-node
-                                                :name "child-b"
-                                                :input-keys '("KEY-child-b")
-                                                :output-keys '("VAL-child-b"))
-                                 (make-instance 'test-child-task-node
-                                                :name "child-c"
-                                                :input-keys '("KEY-child-c")
-                                                :output-keys '("VAL-child-c")))))
+(defun %mock-prompt-transform-fn (prompt output-key)
+  (list output-key (format nil "##~A" prompt)))
+;;(%mock-prompt-transform-fn "foo" :llm-prepared-prompt)
 
-#+(or) (defparameter *test-parent-task-node* (%make-test-parent-task-node))
-#+(or) (defparameter *test-root-store* nil)
+(defun %make-prompt-artifact (prompt-text
+                              &key
+                                (name (format nil "prompt-~A" prompt-text) name-provided-p)
+                                (description (format nil "A simple prompt: prompt-~A" prompt-text) description-provided-p)
+                                (metadata nil metadata-provided-p))
+
+  (make-instance 'artifact :data prompt-text :name name :description description :metadata metadata))
+;;(defparameter *pa* (%make-prompt-artifact "foo"))
+
+(defun %make-test-child-task-node (transform-fn input-keys output-keys)
+  (let ((execution-event (make-instance 'execution-event :input-keys input-keys :output-keys output-keys)))
+    (make-instance 'test-child-task-node
+                   :execution-event execution-event
+                   :transform-fn transform-fn)))
 
 (defmethod run ((node test-child-task-node) &rest args)
-  (let ((key (format nil "KEY-~a" (name node)))
-        (val (format nil "Hi, my name is: ~a~%" (name node))))
-    (log:info "node: ~a" node)
-  (setf (lookup *current-metadata-store* key) val)))
+  (let ((execution-event (execution-event node)))
+    (apply (transform-fn node) (input-args execution-event))))
 
-(defun %run-child-task-nodes (parent-node)
-  (flet ((%run-child-task-node (child-node)
-           (let* ((store (make-instance 'memory-scoped-metadata-store
-                                        :name (name child-node)
-                                        :parent *test-root-store*
-                                        :schema (list :fake :schema)))
-                  (*current-metadata-store* store))
-             (format t "Running ~a, with store: ~a~%" (name child-node) store)
-             (run child-node))))
-    (map nil #'%run-child-task-node (children parent-node))))
 
-(defmethod run ((node test-parent-task-node) &rest args)
-  (setf *test-root-store* nil)
-  (let* ((store (make-instance 'memory-scoped-metadata-store
-                               :name "root"
-                               :parent nil
-                               :schema (list :fake :schema)))
-         (*root-metadata-store* store)
-         (*current-metadata-store* store))
-    (setf *test-root-store* store)
-    (format t "Running ~a, with store: ~a~%" (name node) store)
-    (%run-child-task-nodes node)))
+#+(or)(let ((node (%make-test-child-task-node
+                  '%mock-prompt-transform-fn
+                  '(:llm-raw-prompt)
+                  '(:llm-prepared-prompt))))
+        (run node))
+;;;;
+;;;; We need a mapping between input keys and output keys.
+;;;; A single input key can map to multiple output keys.
+;;;;
+;;;;
+
 
 #+(or) (progn (journal:jtrace run))
 #+(or) (journal:with-journaling (:record t)
