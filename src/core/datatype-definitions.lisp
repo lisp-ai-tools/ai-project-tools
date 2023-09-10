@@ -140,49 +140,35 @@ which may be more nodes, or other values. If the parent slot is nil, this is a r
 workflow. Examples of artifacts include datasets, models, input
 files, and training logs."))
 
-(defclass execution-node (has-data has-metadata has-state has-description node runnable)
-  ()
-  (:documentation
-   " An execution node is a record of an individual machine learning workflow step,
-typically annotated with its runtime parameters. Examples of executions include
-data ingestion, data validation, model training, model evaluation, and model
-deployment. The product of an execution is one or more artifact."))
-
-(defclass execution-tree-node (execution-node tree-node)
-  ()
-  (:documentation
-   "Base marker class for all execution tree-nodes. Nodes that are composites. The
-scope of their execution/run encmpasses that of their children as well."))
-
 (defclass execution-event (has-data has-metadata belongs-to-session)
-  ((%input-keys 
-    :initarg :input-keys 
+  ((%input-keys
+    :initarg :input-keys
     :initform (error "Must supply one or more input keys.")
     :accessor input-keys
     :type list
     :documentation "Names of expected input artifacts.")
-   (%output-keys 
+   (%output-keys
     :initarg :output-keys
     :initform (error "Must supply one or more output keys.")
     :accessor output-keys
     :type list
     :documentation "Names of produced output artifacts.")
-   (%inputs 
-    :initarg :inputs 
+   (%inputs
+    :initarg :inputs
     :initform nil
     :accessor inputs
     :type list
     :documentation
     "Inputs to the execution event made available in the context of the execution.")
-   (%outputs 
-    :initarg :outputs 
+   (%outputs
+    :initarg :outputs
     :initform nil
     :accessor outputs
     :type list
     :documentation
     "Outputs of the execution event produced in the context of the execution.")
-   (%execution-node 
-    :initarg :execution-node 
+   (%execution-node
+    :initarg :execution-node
     :initform nil
     :accessor execution-node
     :type (or null execution-node)
@@ -196,6 +182,30 @@ Events help you to determine the provenance of artifacts in their ML workflows
 by chaining together artifacts and executions. An event is a record of an action
 that occurred at a particular time and date. An event is also an edge in a graph
 of artifacts and executions."))
+
+(defclass has-execution-event ()
+  ((%execution-event
+    :initarg :execution-event
+    :initform nil
+    :accessor execution-event
+    :type (or null execution-event)))
+  (:documentation
+   "Mixin for classes that operate within the context of an execution event,
+consuming and producing the date within the execution-event."))
+
+(defclass execution-node (has-execution-event has-state node runnable)
+  ()
+  (:documentation
+   " An execution node is a record of an individual machine learning workflow step,
+typically annotated with its runtime parameters. Examples of executions include
+data ingestion, data validation, model training, model evaluation, and model
+deployment. The product of an execution is one or more artifact."))
+
+(defclass execution-tree-node (execution-node tree-node)
+  ()
+  (:documentation
+   "Base marker class for all execution tree-nodes. Nodes that are composites. The
+scope of their execution/run encmpasses that of their children as well."))
 
 ;;;; ======= Core system runtime containers. Everything happens within these contexts. =======
 (defclass configuration-set () ())
