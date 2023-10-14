@@ -1,0 +1,48 @@
+#+title: Chat Notes
+* Walkthrough of chat execution nodes
+** Single-shot -- completion
+*** Artifacts - Inputs
+**** prompt message
+- template (is it per llm config?)
+- system prompt
+- user prompt
+- input keys + default key/vals
+**** LLM config
+**** Generated Request (LLMRequest + HTTPRequest)
+**** Evaluated/Judged Result (optional)
+*** Run-1 method trace
+**** Around
+- Install handlers/restarts
+
+**** Before
+- Pull new prompts + args from run
+- Increment run-id. Push new scoped context.
+- Use run kwargs or defaults or other means to populate expected inputs.
+- Check all inputs present and conform to schema.
+- Using LLM config, create prompt value artifact.
+**** Run
+- Using LLM config, LLMClient config, create JSON/HTTPRequest artifacts.
+- Call LLM, collect HTTPResponse, raw LLM generated response artifacts.
+  - Collect any errors as artifacts.
+**** After
+- Run any output parsing/output evaluation/ judgements. Collect as final product artifacts.
+*** Artifacts - Outputs
+**** Generated Response (LLMResponse + HTTPResponse)
+**** Parsed/Processed output
+- Could have many intermediate steps
+** Iterative -- chat
+*** Artifacts - same as Single-shot completion +
+**** Message History
+**** History processing (to keep within LLM context limits)
+*** Run method trace
+For iterative LLM interfaces, run is a loop pulling prompts from a blocking queue.
+Each iteration is a run-loop-step method.
+**** Before
+- Create context from sys-msg + message history, possibly truncating or picking N-best to fit within context window.
+**** run-step
+**** After
+** Q/A RAG
+** Classification
+** Code completion
+** Agents
+*** Software edit/create agent

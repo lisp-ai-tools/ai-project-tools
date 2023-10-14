@@ -138,3 +138,5 @@
                      :fiveam :run!
                      (uiop:find-symbol* :ai-project-tools/app-tests-suite
                                         :ai-project-tools/app-tests))))
+
+#+(or) (ql:quickload :ai-project-tools)
