@@ -1,16 +1,15 @@
 (in-package :schemata)
 
-(defclass accessor-test ()
-  ((%slot-w-reader :initarg :slot-w-reader :initform nil :reader slot-w-reader)
-   (%slot-w-writer :initarg :slot-w-writer :initform nil :writer slot-w-writer)
-   (%slot-w-accessor :initarg :slot-w-accessor :initform nil :accessor slot-w-accessor)
-   (%slot-bare :initarg :slot-bare :initform nil)))
+;; Marker class for objects that know how to validate themselves.
+(defclass validating-object-mixin ()
+  ((%schema :initarg :schema
+            :initform (error "No schema specified")
+            :reader object-schema)))
 
-(defclass subclass-accessor-test (accessor-test)
-  ((%slot-subw-reader :initarg :slot-subw-reader :reader slot-subw-reader :type integer)
-   (%slot-subw-writer :initarg :slot-subw-writer :writer slot-subw-writer :type string)
-   (%slot-subw-accessor :initarg :slot-subw-accessor :accessor slot-subw-accessor :type float)
-   (%slot-subbare :initarg :slot-subbare :type integer)))
+(defmethod initialize-instance :after ((instance validating-object-mixin) &rest args)
+  (declare (ignore args)
+  ;; (setf (%schema instance) (schemata:find-schema (%schema instance)))
+  (schemata:validate-with-schema (object-schema instance) instance)))
 
 (defclass validating-object-schema (schemata:object-schema)
   ((instance-validator :initarg :instance-validator
@@ -29,18 +28,18 @@ object, in addition to the attributes/slots."))
            :attributes (mapcar #'parse-attribute attributes)
            options)))
 
-#+(or)(defparameter *slot-object*
-        (make-instance 'accessor-test :slot-w-reader 15
-                                      :slot-w-writer "MOO" :slot-w-accessor 3.5
-                                      :slot-bare 4))
-#+(or)(defparameter *subclass-slot-object*
-        (make-instance 'subclass-accessor-test :slot-w-reader 1 :slot-w-writer "MOO" :slot-w-accessor 3.5 :slot-bare 4
-                       :slot-subw-reader 1 :slot-subw-writer "MOO" :slot-subw-accessor 3.5 :slot-subbare 4))
-;;(slot-w-writer 5 *slot-object*)
-;;(cl-mop::to-plist *slot-object*)
-;;(cl-mop::to-plist *subclass-slot-object*)
-;;(c2mop:class-direct-slots (find-class 'subclass-accessor-test))
-;;(c2mop:class-slots (find-class 'subclass-accessor-test))
+(defclass accessor-test (validating-object-mixin)
+  ((%slot-w-reader :initarg :slot-w-reader :initform nil :reader slot-w-reader)
+   (%slot-w-writer :initarg :slot-w-writer :initform nil :writer slot-w-writer)
+   (%slot-w-accessor :initarg :slot-w-accessor :initform nil :accessor slot-w-accessor)
+   (%slot-bare :initarg :slot-bare :initform nil)))
+
+(defclass subclass-accessor-test (accessor-test)
+  ((%slot-subw-reader :initarg :slot-subw-reader :reader slot-subw-reader :type integer)
+   (%slot-subw-writer :initarg :slot-subw-writer :writer slot-subw-writer :type string)
+   (%slot-subw-accessor :initarg :slot-subw-accessor :accessor slot-subw-accessor :type float)
+   (%slot-subbare :initarg :slot-subbare :type integer)))
+
 (defun %acceptable-str-slot (x)
   (member x '("MOO" "BAHAHA" "WOOF") :test #'equalp))
 
@@ -58,58 +57,19 @@ object, in addition to the attributes/slots."))
       (%slot-w-accessor float :accessor slot-w-accessor :required t)
       (%slot-bare integer :required t))
      (:instance-validator %acceptable-accessor-test-instance)))
-;;(schemata:find-schema 'accessor-test-schema)
-(defparameter *last-attribute* nil)
-(schemata::schema-validate 'accessor-test-schema *slot-object*)
-(schemata::validate-with-schema 'accessor-test-schema *slot-object* :collect-errors t)
-(slot-w-writer "MOO" *slot-object*)
 
+#+(or)(defparameter *slot-object*
+        (make-instance 'accessor-test :slot-w-reader 15
+                                      :slot-w-writer "MOO" :slot-w-accessor 3.5
+                                      :slot-bare 4))
+#+(or)(defparameter *subclass-slot-object*
+        (make-instance 'subclass-accessor-test :slot-w-reader 1 :slot-w-writer "MOO" :slot-w-accessor 3.5 :slot-bare 4
+                       :slot-subw-reader 1 :slot-subw-writer "MOO" :slot-subw-accessor 3.5 :slot-subbare 4))
 
-(defmethod schema-validate ((schema validating-object-schema) data)
-  "Validate instance using schema object. "
-  ;; Validate each attribute of object
-  (loop
-    :for schema-attribute :in (object-attributes schema)
-    :do (let* ((data-reader (attribute-reader schema-attribute))
-               (data-attribute (funcall data-reader data)))
-          (setf *last-attribute* schema-attribute)
-            ;; (log:info "attr-reader: ~a, with schema: ~a"
-            ;;           attr-reader schema-attribute)
-            ;; (log:info "Validating attribute: ~a, with schema: ~a"
-            ;;           data-attribute schema-attribute)
-            (cond
-              ((and (not data-attribute)
-                    (not (attribute-optional-p schema-attribute)))
-               (let ((error-msg (or (attribute-required-message schema-attribute)
-                                    (format nil "Attribute required: ~a"
-                                            (or (attribute-external-name schema-attribute)
-                                                (attribute-name schema-attribute))))))
-                 (validation-error error-msg)))
-              ((not data-attribute)
-               ;; Nothing to validate
-               )
-              ((not (and (attribute-optional-p schema-attribute)
-                         (null data-attribute)))
-               (schema-validate schema-attribute data-attribute)))
-          ))
-  ;;After validating attributes, validate instance
-  (let ((instance-validator (instance-validator schema)))
-    (when instance-validator
-      (unless (funcall instance-validator data)
-        (validation-error "Instance validator failed."))))
-  (log:info "WOOHOO! Validated instance: ~a. ALL GOOD" data)
-  data)
-
-(defun %slot-definitions-of-class (class)
-  "Return a list of slot-definitions for CLASS."
-  (c2mop:class-slots class))
-;;(defparameter *sub-slot-definitions* (%slot-definitions-of-class (find-class 'subclass-accessor-test)))
-
-(defun %direct-slots-of-class (class)
-  "Return a list of slot-definitions for CLASS."
-  (c2mop:class-direct-slots class))
-;;(defparameter *sub-direct-slots* (%direct-slots-of-class (find-class 'subclass-accessor-test)))
-
+;;;; ================================================================================
+;;;; CLOS utilities
+;;;; ================================================================================
+;; https://stackoverflow.com/questions/38452350/is-there-a-way-to-gather-slot-definition-readers-from-all-the-inheritance-tree
 (defun all-direct-slots (class)
   (append (c2mop:class-direct-slots class)
           (alexandria:mappend #'all-direct-slots
@@ -123,17 +83,52 @@ object, in addition to the attributes/slots."))
 (defun all-slot-writers (class)
   (alexandria:mappend #'c2mop:slot-definition-writers
            (all-direct-slots class)))
-;;(all-slot-readers (find-class 'subclass-accessor-test))
-;;(all-slot-writers (find-class 'subclass-accessor-test))
+;; From cl-mop
+;; https://github.com/inaimathi/cl-mop (MIT License)
+;;;;;;;;;;;;;;; basic operations
+(defmethod slot-names ((object error))
+  (slot-names (class-of object)))
 
-;;(defparameter *slot-definitions* (%slot-definitions-of-class (find-class 'accessor-test)))
-;;(defparameter *slots* (c2mop:class-slots (find-class 'accessor-test)))
-;;(defparameter *direct-slots* (%direct-slots-of-class (find-class 'accessor-test)))
-;;(nth 0 *slot-definitions*)
-;;(c2mop:slot-definition-readers (nth 0 *direct-slots*))
-;;(c2mop:slot-definition-readers (nth 0 *slots*))
-;;(c2mop:slot-definition-readers (nth 3 *slots*))
-;;(sb-mop:slot-definition-readers (nth 0 *slot-definitions*))
+(defmethod slot-names ((object standard-object))
+  (slot-names (class-of object)))
+
+(defmethod slot-names ((class standard-class))
+  (mapcar #'slot-definition-name (class-slots class)))
+
+(defgeneric map-slots (function instance)
+  (:documentation "Takes a binary function and an instance.
+Returns the sequence resulting from calling the function on each bound (slot-name slot-value) of instance"))
+
+(defmethod map-slots ((fn function) (instance error))
+  (loop for slot in (class-slots (class-of instance))
+     for slot-name = (slot-definition-name slot)
+     when (slot-boundp instance slot-name)
+     collect (funcall fn slot-name (slot-value instance slot-name))))
+
+(defmethod map-slots ((fn function) (instance standard-object))
+  "The default case of map-slots specializes on STANDARD-OBJECT."
+  (loop for slot in (class-slots (class-of instance))
+	for slot-name = (slot-definition-name slot)
+	when (slot-boundp instance slot-name)
+	  collect (funcall fn slot-name (slot-value instance slot-name))))
+
+(defmethod to-alist ((instance error))
+  (map-slots (lambda (k v) (cons k v)) instance))
+
+(defmethod to-alist ((instance standard-object))
+  "Returns an assoc list of (k . v) pairs from the given instances' slots and slot-values.
+This is meant to provide an easy way of showing "
+  (map-slots (lambda (k v) (cons k v)) instance))
+
+;; Added by me
+(defmethod to-plist ((instance error))
+  (flatten (map-slots (lambda (k v) (list (alexandria:make-keyword k) v)) instance)))
+
+(defmethod to-plist ((instance standard-object))
+  "Returns a plist of ((keyword k) v ...) pairs from the given instances' slots and slot-values.
+This is meant to provide an easy way of showing "
+  (flatten (map-slots (lambda (k v) (list (alexandria:make-keyword k) v)) instance)))
+
 
 (defun %slot-reader-fn (class slot-name)
   "Get the slot-definition for SLOT-NAME in CLASS, and return a function that reads
@@ -148,13 +143,6 @@ return a lambda that uses slot-value."
         (lambda (obj) (funcall (fdefinition (first (c2mop:slot-definition-readers slot))) obj))
         (lambda (obj) (slot-value obj slot-name)))
       (log:info "No slot definition found for ~a in ~a" slot-name class))))
-;;(%slot-reader-fn (find-class 'accessor-test) '%slot-w-reader)
-;;(%slot-reader-fn (find-class 'accessor-test) '%slot-w-accessor)
-;;(%slot-reader-fn (find-class 'accessor-test) "%slot-bare")
-;;(%slot-reader-fn (find-class 'accessor-test) '%slot-bare)
-#+(or)(let ((rfn (%slot-reader-fn (find-class 'accessor-test) '%slot-w-reader))) (funcall rfn *slot-object*))
-#+(or)(let ((rfn (%slot-reader-fn (find-class 'accessor-test) '%slot-w-accessor))) (funcall rfn *slot-object*))
-#+(or)(let ((rfn (%slot-reader-fn (find-class 'accessor-test) '%slot-bare))) (funcall rfn *slot-object*))
 
 (defun %slot-writer-fn (class slot-name)
   "Get the slot-definition for SLOT-NAME in CLASS, and return a function that
@@ -169,12 +157,6 @@ otherwise return a lambda that uses setf on slot-value."
             (funcall (fdefinition (first (c2mop:slot-definition-writers slot))) value obj))
         (lambda (value obj) (setf (slot-value obj slot-name) value))))))
 
-#+(or)(let ((wfn (%slot-writer-fn (find-class 'accessor-test) '%slot-w-writer))) (funcall wfn 255 *slot-object*))
-#+(or)(let ((wfn (%slot-writer-fn (find-class 'accessor-test) '%slot-w-writer))) (funcall wfn 255 *slot-object*))
-#+(or)(let ((wfn (%slot-writer-fn (find-class 'accessor-test) '%slot-w-accessor))) (funcall wfn 353 *slot-object*))
-#+(or)(let ((wfn (%slot-writer-fn (find-class 'accessor-test) '%slot-bare))) (funcall wfn 1000 *slot-object*))
-;;(%slot-writer-fn (find-class 'accessor-test) '%slot-w-accessor)
-
 (defun generate-schema-from-class (class)
   "Generate a schema from CLASS, using reflection."
   (let ((attributes
@@ -185,7 +167,6 @@ otherwise return a lambda that uses setf on slot-value."
                   collect (make-instance 'attribute
                                          :name (c2mop:slot-definition-name slot)
                                          :required (not (typep nil (c2mop:slot-definition-type slot)))
-                                         ;; TODO: use accessors, writers, readers specificed in slots
                                          :writer (%slot-writer-fn class (c2mop:slot-definition-name slot))
                                          :reader (%slot-reader-fn class (c2mop:slot-definition-name slot))
                                          ;; TODO. FIXME.
@@ -205,8 +186,7 @@ otherwise return a lambda that uses setf on slot-value."
   (unless (trivial-types:association-list-p data)
     ;; (validation-error "Not an object data: ~s" data)
     (log:warn "data parameter is not an association list, coercing to one...")
-    (setf data (cl-mop::to-alist data))
-    )
+    (setf data (to-alist data)))
 
   ;; Check unknown attributes first
   (unless (or *ignore-unknown-object-attributes*
@@ -241,3 +221,34 @@ otherwise return a lambda that uses setf on slot-value."
                     (null data-attribute)))
           (schema-validate schema-attribute
                            (cdr data-attribute))))))
+
+(defmethod schema-validate ((schema validating-object-schema) data)
+  "Validate instance using schema object. "
+  ;; Validate each attribute of object
+  (loop
+    :for schema-attribute :in (object-attributes schema)
+    :do (let* ((data-reader (attribute-reader schema-attribute))
+               (data-attribute (funcall data-reader data)))
+          ;; (setf *last-attribute* schema-attribute)
+            (cond
+              ((and (not data-attribute)
+                    (not (attribute-optional-p schema-attribute)))
+               (let ((error-msg (or (attribute-required-message schema-attribute)
+                                    (format nil "Attribute required: ~a"
+                                            (or (attribute-external-name schema-attribute)
+                                                (attribute-name schema-attribute))))))
+                 (validation-error error-msg)))
+              ((not data-attribute)
+               ;; Nothing to validate
+               )
+              ((not (and (attribute-optional-p schema-attribute)
+                         (null data-attribute)))
+               (schema-validate schema-attribute data-attribute)))
+          ))
+  ;;After validating attributes, validate instance
+  (let ((instance-validator (instance-validator schema)))
+    (when instance-validator
+      (unless (funcall instance-validator data)
+        (validation-error "Instance validator failed."))))
+  (log:info "WOOHOO! Validated instance: ~a. ALL GOOD" data)
+  data)
