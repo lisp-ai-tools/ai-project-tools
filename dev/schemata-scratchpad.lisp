@@ -171,13 +171,17 @@ otherwise return a lambda that uses setf on slot-value."
                                          :reader (%slot-reader-fn class (c2mop:slot-definition-name slot))
                                          ;; TODO. FIXME.
                                          ;; :documentation (c2mop:slot-definition-documentation slot)
-                                         :type (make-instance 'type-schema :type (c2mop:slot-definition-type slot))))))
+                                         :type (make-instance 'type-schema :type (c2mop:slot-definition-type slot))
+                                         ;; :type nil
+                                         ))))
     (make-instance 'object-schema
                    :name (class-name class)
                    :documentation (documentation class t)
                    :attributes attributes
-                   :class (class-name class))))
-;;(defparameter *subclass-accessor-test-schema* (generate-schema-from-class (find-class 'subclass-accessor-test)))
+                   :class (class-name class))
+    ))
+#+(or)(defparameter *subclass-accessor-test-schema*
+        (generate-schema-from-class (find-class 'subclass-accessor-test)))
 ;;(schemata::schema-validate *subclass-accessor-test-schema* *subclass-slot-object*)
 
 (defmethod schema-validate ((schema object-schema) data)
