@@ -15,18 +15,28 @@
                                 (name (format nil "prompt-~A" prompt-text) name-provided-p)
                                 (description (format nil "A simple prompt: prompt-~A" prompt-text) description-provided-p)
                                 (metadata nil metadata-provided-p))
-
   (make-instance 'artifact :data prompt-text :name name :description description :metadata metadata))
 ;;(defparameter *pa* (%make-prompt-artifact "foo"))
 
-(defun %make-test-child-task-node (transform-fn input-keys output-keys)
-  (let ((execution-event (make-instance 'execution-event :input-keys input-keys :output-keys output-keys)))
+(defun %make-test-child-task-node (transform-fn input-keys output-keys &key inputs)
+  (let ((execution-event (make-instance 'execution-event :input-keys input-keys
+                                                         :output-keys output-keys
+                                                         :inputs inputs)))
     (make-instance 'test-child-task-node
                    :execution-event execution-event
                    :transform-fn transform-fn)))
 
+#+(or)(defparameter *cn* (%make-test-child-task-node
+                          '%mock-prompt-transform-fn
+                          '(:llm-raw-prompt :llm-context :llm-chat-history)
+                          '(:llm-prepared-prompt)
+                          :inputs (list (%make-prompt-artifact "FOO Prompt" :name :llm-raw-prompt))))
+#+(or)(setf (inputs *cn*) (append (inputs *cn*) (%make-prompt-artifact "FOO Prompt" :name :llm-raw-prompt)))
+#+(or)(loop :for art :in (inputs (execution-event *cn*)) :collect (list (name art) art))
+
 (defmethod run ((node test-child-task-node) &rest args)
-  (let ((execution-event (execution-event node)))
+  (let ((execution-event (execution-event node))
+        (input-plist ()))
     (apply (transform-fn node) (input-args execution-event))))
 
 
