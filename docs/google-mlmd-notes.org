@@ -1,0 +1,260 @@
+#+title: Google Mlmd Notes
+
+* Metadata Model - ml-metadata / vertex ai / tensorflow tfx mlmd
+** Data Model Overview
+The Metadata Store uses the following data model to record and retrieve metadata
+from the storage backend.
+***   `ArtifactType` describes an artifact's type and its properties that are
+    stored in the metadata store. You can register these types on-the-fly with
+    the metadata store in code, or you can load them in the store from a
+    serialized format. Once you register a type, its definition is available
+    throughout the lifetime of the store.
+***   An `Artifact` describes a specific instance of an `ArtifactType`, and its
+    properties that are written to the metadata store.
+***   An `ExecutionType` describes a type of component or step in a workflow, and
+    its runtime parameters.
+***   An `Execution` is a record of a component run or a step in an ML workflow
+    and the runtime parameters. An execution can be thought of as an instance of
+    an `ExecutionType`. Executions are recorded when you run an ML pipeline or
+    step.
+***   An `Event` is a record of the relationship between artifacts and executions.
+    When an execution happens, events record every artifact that was used by the
+    execution, and every artifact that was produced. These records allow for
+    lineage tracking throughout a workflow. By looking at all events, MLMD knows
+    what executions happened and what artifacts were created as a result. MLMD
+    can then recurse back from any artifact to all of its upstream inputs.
+***   A `ContextType` describes a type of conceptual group of artifacts and
+    executions in a workflow, and its structural properties. For example:
+    projects, pipeline runs, experiments, owners etc.
+***   A `Context` is an instance of a `ContextType`. It captures the shared
+    information within the group. For example: project name, changelist commit
+    id, experiment annotations etc. It has a user-defined unique name within its
+    `ContextType`.
+***   An `Attribution` is a record of the relationship between artifacts and
+    contexts.
+***   An `Association` is a record of the relationship between executions and
+    contexts.
+
+** TF usage example
+https://www.tensorflow.org/tfx/tutorials/mlmd/mlmd_tutorial
+
+** TFX mlmd doc overview
+https://www.tensorflow.org/tfx/guide/mlmd
+** TFX mlmd data types
+*** Base Artifacts
+https://github.com/tensorflow/tfx/blob/master/tfx/types/system_artifacts.py
+#+begin_src python
+"""A set of TFX System Artifacts.
+
+It matches the MLMD system artifacts types from:
+third_party/ml_metadata/metadata_store/mlmd_types.py
+"""
+import abc
+
+from ml_metadata.metadata_store import mlmd_types
+
+
+class SystemArtifact(abc.ABC):
+  """TFX system artifact base class.
+
+  A user may create a subclass of SystemArtifact and override the
+  MLMD_SYSTEM_BASE_TYPE property with the MLMD system type enum.
+
+  The subclasses, e.g, Dataset, Model, Statistics, e.t.c, match the MLMD types
+  from third_party/ml_metadata/metadata_store/mlmd_types.py.
+  """
+
+  # MLMD system base type enum. Override it when creating subclasses.
+  MLMD_SYSTEM_BASE_TYPE = None
+
+
+class Dataset(SystemArtifact):
+  """Dataset is a TFX pre-defined system artifact."""
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Dataset().system_type
+
+
+class Model(SystemArtifact):
+  """Model is a TFX pre-defined system artifact."""
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Model().system_type
+
+
+class Statistics(SystemArtifact):
+  """Statistics is a TFX pre-defined system artifact."""
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Statistics().system_type
+
+
+class Metrics(SystemArtifact):
+  """Metrics is a TFX pre-defined system artifact."""
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Metrics().system_type
+#+end_src
+*** Base Executions
+https://github.com/tensorflow/tfx/blob/master/tfx/types/system_executions.py
+#+begin_src python
+"""A set of TFX System Executions.
+
+It matches the MLMD system execution types from:
+third_party/ml_metadata/metadata_store/mlmd_types.py
+"""
+import abc
+
+from ml_metadata.metadata_store import mlmd_types
+
+
+class SystemExecution(abc.ABC):
+  """TFX system execution base class.
+
+  A user may create a subclass of SystemExecution and override the
+  MLMD_SYSTEM_BASE_TYPE property with the MLMD system type enum.
+
+  The subclasses, e.g, Train, Transform, Process, e.t.c, match the MLMD types
+  from third_party/ml_metadata/metadata_store/mlmd_types.py.
+  """
+
+  # MLMD system base type enum. Override it when creating subclasses.
+  MLMD_SYSTEM_BASE_TYPE = None
+
+
+class Train(SystemExecution):
+  """Train is a TFX pre-defined system execution.
+
+  Train is one of the key executions that performs the actual model training.
+  """
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Train().system_type
+
+
+class Transform(SystemExecution):
+  """Transform is a TFX pre-defined system execution.
+
+  It performs transformations and feature engineering in training and serving.
+  """
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Transform().system_type
+
+
+class Process(SystemExecution):
+  """Process is a TFX pre-defined system execution.
+
+  It includes various executions such as ExampleGen, SchemaGen, SkewDetection,
+  e.t.c., which performs data/model/statistics processing.
+  """
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Process().system_type
+
+
+class Evaluate(SystemExecution):
+  """Evaluate is a TFX pre-defined system execution.
+
+  It computes a model’s evaluation statistics over (slices of) features.
+  """
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Evaluate().system_type
+
+
+class Deploy(SystemExecution):
+  """Deploy is a TFX pre-defined system execution.
+
+  This execution performs model deployment. For example, Pusher component can be
+  annotated as Deploy execution, which checks whether the model passed the
+  validation steps and pushes fully validated models to Servomatic, CNS/Placer,
+  TF-Hub, and other destinations.
+  """
+  MLMD_SYSTEM_BASE_TYPE = mlmd_types.Deploy().system_type
+#+end_src
+*** Pipelines
+https://www.tensorflow.org/tfx/guide/understanding_tfx_pipelines
+Understanding TFX Pipelines
+
+MLOps is the practice of applying DevOps practices to help automate, manage, and audit machine learning (ML) workflows. ML workflows include steps to:
+
+    Prepare, analyze, and transform data.
+    Train and evaluate a model.
+    Deploy trained models to production.
+    Track ML artifacts and understand their dependencies.
+
+Managing these steps in an ad-hoc manner can be difficult and time-consuming.
+
+TFX makes it easier to implement MLOps by providing a toolkit that helps you orchestrate your ML process on various orchestrators, such as: Apache Airflow, Apache Beam, and Kubeflow Pipelines. By implementing your workflow as a TFX pipeline, you can:
+
+    Automate your ML process, which lets you regularly retrain, evaluate, and deploy your model.
+    Utilize distributed compute resources for processing large datasets and workloads.
+    Increase the velocity of experimentation by running a pipeline with different sets of hyperparameters.
+
+This guide describes the core concepts required to understand TFX pipelines.
+Artifact
+
+The outputs of steps in a TFX pipeline are called artifacts. Subsequent steps in your workflow may use these artifacts as inputs. In this way, TFX lets you transfer data between workflow steps.
+
+For instance, the ExampleGen standard component emits serialized examples, which components such as the StatisticsGen standard component use as inputs.
+
+Artifacts must be strongly typed with an artifact type registered in the ML Metadata store. Learn more about the concepts used in ML Metadata.
+
+Artifact types have a name and define a schema of its properties. Artifact type
+names must be unique in your ML Metadata store. TFX provides several standard
+artifact types that describe complex data types and value types, such as:
+string, integer, and float. You can reuse these artifact types or define custom
+artifact types that derive from Artifact.
+
+Parameter
+
+Parameters are inputs to pipelines that are known before your pipeline is executed. Parameters let you change the behavior of a pipeline, or a part of a pipeline, through configuration instead of code.
+
+For example, you can use parameters to run a pipeline with different sets of hyperparameters without changing the pipeline's code.
+
+Using parameters lets you increase the velocity of experimentation by making it easier to run your pipeline with different sets of parameters.
+
+Learn more about the RuntimeParameter class.
+Component
+
+A component is an implementation of an ML task that you can use as a step in your TFX pipeline. Components are composed of:
+
+    A component specification, which defines the component's input and output artifacts, and the component's required parameters.
+    An executor, which implements the code to perform a step in your ML workflow, such as ingesting and transforming data or training and evaluating a model.
+    A component interface, which packages the component specification and executor for use in a pipeline.
+
+TFX provides several standard components that you can use in your pipelines. If these components do not meet your needs, you can build custom components. Learn more about custom components.
+Pipeline
+
+A TFX pipeline is a portable implementation of an ML workflow that can be run on various orchestrators, such as: Apache Airflow, Apache Beam, and Kubeflow Pipelines. A pipeline is composed of component instances and input parameters.
+
+Component instances produce artifacts as outputs and typically depend on artifacts produced by upstream component instances as inputs. The execution sequence for component instances is determined by creating a directed acyclic graph of the artifact dependencies.
+
+For example, consider a pipeline that does the following:
+
+    Ingests data directly from a proprietary system using a custom component.
+    Calculates statistics for the training data using the StatisticsGen standard component.
+    Creates a data schema using the SchemaGen standard component.
+    Checks the training data for anomalies using the ExampleValidator standard component.
+    Performs feature engineering on the dataset using the Transform standard component.
+    Trains a model using the Trainer standard component.
+    Evaluates the trained model using the Evaluator component.
+    If the model passes its evaluation, the pipeline enqueues the trained model to a proprietary deployment system using a custom component.
+
+To determine the execution sequence for the component instances, TFX analyzes the artifact dependencies.
+
+    The data ingestion component does not have any artifact dependencies, so it can be the first node in the graph.
+    StatisticsGen depends on the examples produced by data ingestion, so it must be executed after data ingestion.
+    SchemaGen depends on the statistics created by StatisticsGen, so it must be executed after StatisticsGen.
+    ExampleValidator depends on the statistics created by StatisticsGen and the schema created by SchemaGen, so it must be executed after StatisticsGen and SchemaGen.
+    Transform depends on the examples produced by data ingestion and the schema created by SchemaGen, so it must be executed after data ingestion and SchemaGen.
+    Trainer depends on the examples produced by data ingestion, the schema created by SchemaGen, and the saved model produced by Transform. The Trainer can be executed only after data ingestion, SchemaGen, and Transform.
+    Evaluator depends on the examples produced by data ingestion and the saved model produced by the Trainer, so it must be executed after data ingestion and the Trainer.
+    The custom deployer depends on the saved model produced by the Trainer and the analysis results created by the Evaluator, so the deployer must be executed after the Trainer and the Evaluator.
+
+Based on this analysis, an orchestrator runs:
+
+    The data ingestion, StatisticsGen, SchemaGen component instances sequentially.
+    The ExampleValidator and Transform components can run in parallel since they share input artifact dependencies and do not depend on each other's output.
+    After the Transform component is complete, the Trainer, Evaluator, and custom deployer component instances run sequentially.
+
+Learn more about building a TFX pipeline.
+TFX Pipeline Template
+
+TFX Pipeline Templates make it easier to get started with pipeline development by providing a prebuilt pipeline that you can customize for your use case.
+
+Learn more about customizing a TFX pipeline template.
+Pipeline Run
+
+A run is a single execution of a pipeline.
+Orchestrator
+
+An Orchestrator is a system where you can execute pipeline runs. TFX supports
+orchestrators such as: Apache Airflow, Apache Beam, and Kubeflow Pipelines. TFX
+also uses the term DagRunner to refer to an implementation that supports an
+orchestrator.

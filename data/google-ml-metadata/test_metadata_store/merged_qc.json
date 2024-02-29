@@ -1,0 +1,1867 @@
+{
+  "metadataSourceType": "SQLITE_METADATA_SOURCE",
+  "dropTypeTable": {
+    "query": " DROP TABLE IF EXISTS `Type`; "
+  },
+  "createTypeTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `Type` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `name` VARCHAR(255) NOT NULL,    `version` VARCHAR(255),    `type_kind` TINYINT(1) NOT NULL,    `description` TEXT,    `input_type` TEXT,    `output_type` TEXT,    `external_id` VARCHAR(255) UNIQUE ); "
+  },
+  "selectTypeById": {
+    "query": " SELECT `id`, `name`, `version`, `description`, `external_id`,         `input_type`, `output_type` FROM `Type`  WHERE id = $0 and type_kind = $1; ",
+    "parameterNum": 2
+  },
+  "dropTypePropertyTable": {
+    "query": " DROP TABLE IF EXISTS `TypeProperty`; "
+  },
+  "createTypePropertyTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `TypeProperty` (    `type_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `data_type` INT NULL,  PRIMARY KEY (`type_id`, `name`)); "
+  },
+  "insertTypeProperty": {
+    "query": " INSERT INTO `TypeProperty`(    `type_id`, `name`, `data_type` ) VALUES($0, $1, $2);",
+    "parameterNum": 3
+  },
+  "selectPropertyByTypeId": {
+    "query": " SELECT `name` as `key`, `data_type` as `value`  from `TypeProperty`  WHERE `type_id` = $0; ",
+    "parameterNum": 1
+  },
+  "selectLastInsertId": {
+    "query": " SELECT last_insert_rowid(); "
+  },
+  "dropArtifactTable": {
+    "query": " DROP TABLE IF EXISTS `Artifact`; "
+  },
+  "createArtifactTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `Artifact` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `uri` TEXT,    `state` INT,    `name` VARCHAR(255),    `external_id` VARCHAR(255) UNIQUE,    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+  },
+  "insertArtifact": {
+    "query": " INSERT INTO `Artifact`(    `type_id`, `uri`, `state`, `name`, `external_id`,    `create_time_since_epoch`, `last_update_time_since_epoch` ) VALUES($0, $1, $2, $3, $4, $5, $6);",
+    "parameterNum": 7
+  },
+  "selectArtifactById": {
+    "query": " SELECT A.id, A.type_id, A.uri, A.state, A.name,         A.external_id, A.create_time_since_epoch,         A.last_update_time_since_epoch,         T.name AS `type`, T.version AS type_version,         T.description AS type_description,         T.external_id AS type_external_id  FROM `Artifact` AS A  LEFT JOIN `Type` AS T    ON (T.id = A.type_id)  WHERE A.id IN ($0); ",
+    "parameterNum": 1
+  },
+  "dropArtifactPropertyTable": {
+    "query": " DROP TABLE IF EXISTS `ArtifactProperty`; "
+  },
+  "createArtifactPropertyTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `ArtifactProperty` (    `artifact_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,    `byte_value` BLOB,    `proto_value` BLOB,    `bool_value` BOOLEAN,  PRIMARY KEY (`artifact_id`, `name`, `is_custom_property`)); "
+  },
+  "insertArtifactProperty": {
+    "query": " INSERT INTO `ArtifactProperty`(    `artifact_id`, `name`, `is_custom_property`, `$0` ) VALUES($1, $2, $3, $4);",
+    "parameterNum": 5
+  },
+  "selectArtifactPropertyByArtifactId": {
+    "query": " SELECT `artifact_id` as `id`, `name` as `key`,         `is_custom_property`,         `int_value`, `double_value`, `string_value`, `proto_value`,        `bool_value`  from `ArtifactProperty`  WHERE `artifact_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectTypeByName": {
+    "query": " SELECT `id`, `name`, `version`, `description`, `external_id`,         `input_type`, `output_type` FROM `Type`  WHERE name = $0 AND version IS NULL AND type_kind = $1; ",
+    "parameterNum": 2
+  },
+  "updateArtifact": {
+    "query": " UPDATE `Artifact`  SET `type_id` = $1, `uri` = $2, `state` = $3, `external_id` = $4,      `last_update_time_since_epoch` = $5  WHERE id = $0;",
+    "parameterNum": 6
+  },
+  "updateArtifactProperty": {
+    "query": " UPDATE `ArtifactProperty`  SET `$0` = $1  WHERE `artifact_id` = $2 and `name` = $3;",
+    "parameterNum": 4
+  },
+  "deleteArtifactProperty": {
+    "query": " DELETE FROM `ArtifactProperty`  WHERE `artifact_id` = $0 and `name` = $1;",
+    "parameterNum": 2
+  },
+  "dropExecutionTable": {
+    "query": " DROP TABLE IF EXISTS `Execution`; "
+  },
+  "createExecutionTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `Execution` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `last_known_state` INT,    `name` VARCHAR(255),    `external_id` VARCHAR(255) UNIQUE,    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+  },
+  "dropExecutionPropertyTable": {
+    "query": " DROP TABLE IF EXISTS `ExecutionProperty`; "
+  },
+  "createExecutionPropertyTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `ExecutionProperty` (    `execution_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,    `byte_value` BLOB,    `proto_value` BLOB,    `bool_value` BOOLEAN,  PRIMARY KEY (`execution_id`, `name`, `is_custom_property`)); "
+  },
+  "insertExecution": {
+    "query": " INSERT INTO `Execution`(    `type_id`, `last_known_state`, `name`, `external_id`,    `create_time_since_epoch`, `last_update_time_since_epoch` ) VALUES($0, $1, $2, $3, $4, $5);",
+    "parameterNum": 6
+  },
+  "selectExecutionById": {
+    "query": " SELECT E.id, E.type_id, E.last_known_state, E.name,          E.external_id, E.create_time_since_epoch,          E.last_update_time_since_epoch,          T.name AS `type`, T.version AS type_version,          T.description AS type_description,          T.external_id AS type_external_id  FROM `Execution` AS E  LEFT JOIN `Type` AS T    ON (T.id = E.type_id)  WHERE E.id IN ($0); ",
+    "parameterNum": 1
+  },
+  "insertExecutionProperty": {
+    "query": " INSERT INTO `ExecutionProperty`(    `execution_id`, `name`, `is_custom_property`, `$0` ) VALUES($1, $2, $3, $4);",
+    "parameterNum": 5
+  },
+  "selectExecutionPropertyByExecutionId": {
+    "query": " SELECT `execution_id` as `id`, `name` as `key`,         `is_custom_property`,         `int_value`, `double_value`, `string_value`, `proto_value`,        `bool_value`  from `ExecutionProperty`  WHERE `execution_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "updateExecutionProperty": {
+    "query": " UPDATE `ExecutionProperty`  SET `$0` = $1  WHERE `execution_id` = $2 and `name` = $3;",
+    "parameterNum": 4
+  },
+  "deleteExecutionProperty": {
+    "query": " DELETE FROM `ExecutionProperty`  WHERE `execution_id` = $0 and `name` = $1;",
+    "parameterNum": 2
+  },
+  "updateExecution": {
+    "query": " UPDATE `Execution`  SET `type_id` = $1, `last_known_state` = $2,      `external_id` = $3,      `last_update_time_since_epoch` = $4  WHERE id = $0;",
+    "parameterNum": 5
+  },
+  "dropEventTable": {
+    "query": " DROP TABLE IF EXISTS `Event`; "
+  },
+  "createEventTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `Event` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `artifact_id` INT NOT NULL,    `execution_id` INT NOT NULL,    `type` INT NOT NULL,    `milliseconds_since_epoch` INT,    UNIQUE(`artifact_id`, `execution_id`, `type`)  ); "
+  },
+  "insertEvent": {
+    "query": " INSERT INTO `Event`(    `artifact_id`, `execution_id`, `type`,    `milliseconds_since_epoch` ) VALUES($0, $1, $2, $3);",
+    "parameterNum": 4
+  },
+  "dropEventPathTable": {
+    "query": " DROP TABLE IF EXISTS `EventPath`; "
+  },
+  "createEventPathTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `EventPath` (    `event_id` INT NOT NULL,    `is_index_step` TINYINT(1) NOT NULL,    `step_index` INT,    `step_key` TEXT  ); "
+  },
+  "insertEventPath": {
+    "query": " INSERT INTO `EventPath`(    `event_id`, `is_index_step`, `$1` ) VALUES($0, $2, $3);",
+    "parameterNum": 4
+  },
+  "checkTypeTable": {
+    "query": " SELECT `id`, `name`, `version`, `type_kind`, `description`,         `input_type`, `output_type`  FROM `Type` LIMIT 1; "
+  },
+  "checkTypePropertyTable": {
+    "query": " SELECT `type_id`, `name`, `data_type`  FROM `TypeProperty` LIMIT 1; "
+  },
+  "checkArtifactTable": {
+    "query": " SELECT `id`, `type_id`, `uri`, `state`, `name`,         `create_time_since_epoch`, `last_update_time_since_epoch`  FROM `Artifact` LIMIT 1; "
+  },
+  "checkArtifactPropertyTable": {
+    "query": " SELECT `artifact_id`, `name`, `is_custom_property`,         `int_value`, `double_value`, `string_value`, `byte_value`,         `proto_value`, `bool_value`  FROM `ArtifactProperty` LIMIT 1; "
+  },
+  "checkExecutionTable": {
+    "query": " SELECT `id`, `type_id`, `last_known_state`, `name`,         `create_time_since_epoch`, `last_update_time_since_epoch`  FROM `Execution` LIMIT 1; "
+  },
+  "checkExecutionPropertyTable": {
+    "query": " SELECT `execution_id`, `name`, `is_custom_property`,         `int_value`, `double_value`, `string_value`, `byte_value`,         `proto_value`, `bool_value`  FROM `ExecutionProperty` LIMIT 1; "
+  },
+  "checkEventTable": {
+    "query": " SELECT `id`, `artifact_id`, `execution_id`,         `type`, `milliseconds_since_epoch`  FROM `Event` LIMIT 1; "
+  },
+  "checkEventPathTable": {
+    "query": " SELECT `event_id`, `is_index_step`, `step_index`, `step_key`  FROM `EventPath` LIMIT 1; "
+  },
+  "selectArtifactsByTypeId": {
+    "query": " SELECT `id` from `Artifact` WHERE `type_id` = $0; ",
+    "parameterNum": 1
+  },
+  "selectExecutionsByTypeId": {
+    "query": " SELECT `id` from `Execution` WHERE `type_id` = $0; ",
+    "parameterNum": 1
+  },
+  "insertArtifactType": {
+    "query": " INSERT INTO `Type`(    `name`, `type_kind`, `version`, `description`, `external_id` ) VALUES($0, 1, $1, $2, $3);",
+    "parameterNum": 4
+  },
+  "insertExecutionType": {
+    "query": " INSERT INTO `Type`(    `name`, `type_kind`, `version`, `description`,    `input_type`, `output_type`, `external_id`  ) VALUES($0, 0, $1, $2, $3, $4, $5);",
+    "parameterNum": 6
+  },
+  "selectArtifactsByUri": {
+    "query": " SELECT `id` from `Artifact` WHERE `uri` = $0; ",
+    "parameterNum": 1
+  },
+  "selectAllTypes": {
+    "query": " SELECT `id`, `name`, `version`, `description`,         `input_type`, `output_type` FROM `Type`  WHERE type_kind = $0; ",
+    "parameterNum": 1
+  },
+  "insertContextType": {
+    "query": " INSERT INTO `Type`(    `name`, `type_kind`, `version`, `description`, `external_id` ) VALUES($0, 2, $1, $2, $3);",
+    "parameterNum": 4
+  },
+  "schemaVersion": "10",
+  "dropMlmdEnvTable": {
+    "query": " DROP TABLE IF EXISTS `MLMDEnv`; "
+  },
+  "createMlmdEnvTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `MLMDEnv` (    `schema_version` INTEGER PRIMARY KEY  ); "
+  },
+  "migrationSchemes": {
+    "0": {
+      "downgradeQueries": [
+        {
+          "query": " DROP TABLE IF EXISTS `MLMDEnv`; "
+        }
+      ],
+      "downgradeVerification": {
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `tbl_name` = 'MLMDEnv'; "
+          }
+        ]
+      }
+    },
+    "1": {
+      "upgradeQueries": [
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `MLMDEnv` (    `schema_version` INTEGER PRIMARY KEY  ); "
+        },
+        {
+          "query": " INSERT INTO `MLMDEnv`(`schema_version`) VALUES(0); "
+        }
+      ],
+      "upgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": " CREATE TABLE IF NOT EXISTS `Type` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `name` VARCHAR(255) NOT NULL,    `is_artifact_type` TINYINT(1) NOT NULL,    `input_type` TEXT,    `output_type` TEXT  ); "
+          },
+          {
+            "query": " CREATE TABLE IF NOT EXISTS `TypeProperty` (    `type_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `data_type` INT NULL,  PRIMARY KEY (`type_id`, `name`)); "
+          },
+          {
+            "query": " CREATE TABLE IF NOT EXISTS `Artifact` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `uri` TEXT  ); "
+          },
+          {
+            "query": " CREATE TABLE IF NOT EXISTS `ArtifactProperty` (    `artifact_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,  PRIMARY KEY (`artifact_id`, `name`, `is_custom_property`)); "
+          },
+          {
+            "query": " CREATE TABLE IF NOT EXISTS `Execution` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL  ); "
+          },
+          {
+            "query": " CREATE TABLE IF NOT EXISTS `ExecutionProperty` (    `execution_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,  PRIMARY KEY (`execution_id`, `name`, `is_custom_property`)); "
+          },
+          {
+            "query": " CREATE TABLE IF NOT EXISTS `Event` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `artifact_id` INT NOT NULL,    `execution_id` INT NOT NULL,    `type` INT NOT NULL,    `milliseconds_since_epoch` INT  ); "
+          },
+          {
+            "query": " CREATE TABLE IF NOT EXISTS `EventPath` (    `event_id` INT NOT NULL,    `is_index_step` TINYINT(1) NOT NULL,    `step_index` INT,    `step_key` TEXT  ); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 1 FROM `MLMDEnv`; "
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " DELETE FROM `Type` WHERE `type_kind` = 2; "
+        },
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `TypeTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `name` VARCHAR(255) NOT NULL,    `is_artifact_type` TINYINT(1) NOT NULL,    `input_type` TEXT,    `output_type` TEXT ); "
+        },
+        {
+          "query": " INSERT INTO `TypeTemp` SELECT * FROM `Type`; "
+        },
+        {
+          "query": " DROP TABLE `Type`; "
+        },
+        {
+          "query": " ALTER TABLE `TypeTemp` rename to `Type`; "
+        }
+      ],
+      "downgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": " INSERT INTO `Type`  (`name`, `type_kind`, `input_type`, `output_type`)  VALUES ('execution_type', 0, 'input', 'output'); "
+          },
+          {
+            "query": " INSERT INTO `Type`  (`name`, `type_kind`, `input_type`, `output_type`)  VALUES ('artifact_type', 1, 'input', 'output'); "
+          },
+          {
+            "query": " INSERT INTO `Type`  (`name`, `type_kind`, `input_type`, `output_type`)  VALUES ('context_type', 2, 'input', 'output'); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM `Type`  WHERE `is_artifact_type` = 2; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `Type`  WHERE `is_artifact_type` = 1 AND `name` = 'artifact_type'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `Type`  WHERE `is_artifact_type` = 0 AND `name` = 'execution_type'; "
+          }
+        ]
+      }
+    },
+    "2": {
+      "upgradeQueries": [
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `TypeTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `name` VARCHAR(255) NOT NULL,    `type_kind` TINYINT(1) NOT NULL,    `input_type` TEXT,    `output_type` TEXT ); "
+        },
+        {
+          "query": " INSERT INTO `TypeTemp` SELECT * FROM `Type`; "
+        },
+        {
+          "query": " DROP TABLE `Type`; "
+        },
+        {
+          "query": " ALTER TABLE `TypeTemp` rename to `Type`; "
+        }
+      ],
+      "upgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": " INSERT INTO `Type` (`name`, `is_artifact_type`) VALUES  ('artifact_type', 1); "
+          },
+          {
+            "query": " INSERT INTO `Type`  (`name`, `is_artifact_type`, `input_type`, `output_type`)  VALUES ('execution_type', 0, 'input', 'output'); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 1 FROM `Type` WHERE  `id` = 1 AND `type_kind` = 1 AND `name` = 'artifact_type'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `Type` WHERE  `id` = 2 AND `type_kind` = 0 AND `name` = 'execution_type'  AND `input_type` = 'input' AND `output_type` = 'output'; "
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " DROP TABLE IF EXISTS `Context`; "
+        },
+        {
+          "query": " DROP TABLE IF EXISTS `ContextProperty`; "
+        }
+      ],
+      "downgradeVerification": {
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `tbl_name` = 'Context'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `tbl_name` = 'ContextProperty'; "
+          }
+        ]
+      }
+    },
+    "3": {
+      "upgradeQueries": [
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `Context` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ContextProperty` (    `context_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,  PRIMARY KEY (`context_id`, `name`, `is_custom_property`)); "
+        }
+      ],
+      "upgradeVerification": {
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM (    SELECT `id`, `type_id`, `name` FROM `Context`  ); "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM (    SELECT `context_id`, `name`, `is_custom_property`,           `int_value`, `double_value`, `string_value`     FROM `ContextProperty`  ); "
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " DROP TABLE IF EXISTS `Association`; "
+        },
+        {
+          "query": " DROP TABLE IF EXISTS `Attribution`; "
+        }
+      ],
+      "downgradeVerification": {
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `tbl_name` = 'Association'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `tbl_name` = 'Attribution'; "
+          }
+        ]
+      }
+    },
+    "4": {
+      "upgradeQueries": [
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `Association` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `context_id` INT NOT NULL,    `execution_id` INT NOT NULL,    UNIQUE(`context_id`, `execution_id`)  ); "
+        },
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `Attribution` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `context_id` INT NOT NULL,    `artifact_id` INT NOT NULL,    UNIQUE(`context_id`, `artifact_id`)  ); "
+        }
+      ],
+      "upgradeVerification": {
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM (    SELECT `id`, `context_id`, `execution_id`    FROM `Association`  ); "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM (    SELECT `id`, `context_id`, `artifact_id`    FROM `Attribution`  ); "
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " CREATE TABLE `ArtifactTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `uri` TEXT  ); "
+        },
+        {
+          "query": " INSERT INTO `ArtifactTemp`  SELECT `id`, `type_id`, `uri` FROM `Artifact`; "
+        },
+        {
+          "query": " DROP TABLE `Artifact`; "
+        },
+        {
+          "query": " ALTER TABLE `ArtifactTemp` RENAME TO `Artifact`; "
+        },
+        {
+          "query": " CREATE TABLE `ExecutionTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL  ); "
+        },
+        {
+          "query": " INSERT INTO `ExecutionTemp`  SELECT `id`, `type_id` FROM `Execution`; "
+        },
+        {
+          "query": " DROP TABLE `Execution`; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionTemp` RENAME TO `Execution`; "
+        },
+        {
+          "query": " CREATE TABLE `ContextTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ContextTemp`  SELECT `id`, `type_id`, `name` FROM `Context`; "
+        },
+        {
+          "query": " DROP TABLE `Context`; "
+        },
+        {
+          "query": " ALTER TABLE `ContextTemp` RENAME TO `Context`; "
+        }
+      ],
+      "downgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `Artifact`;"
+          },
+          {
+            "query": " INSERT INTO `Artifact`  (`id`, `type_id`, `uri`, `state`, `name`,   `create_time_since_epoch`, `last_update_time_since_epoch`)  VALUES (1, 2, 'uri1', 1, NULL, 0, 1); "
+          },
+          {
+            "query": " INSERT INTO `Artifact`  (`id`, `type_id`, `uri`, `state`, `name`,   `create_time_since_epoch`, `last_update_time_since_epoch`)  VALUES (2, 3, 'uri2', NULL, 'name2', 1, 0); "
+          },
+          {
+            "query": "DELETE FROM `Execution`;"
+          },
+          {
+            "query": " INSERT INTO `Execution`  (`id`, `type_id`, `last_known_state`, `name`,   `create_time_since_epoch`, `last_update_time_since_epoch`)  VALUES (1, 2, 1, NULL, 0, 1); "
+          },
+          {
+            "query": "DELETE FROM `Context`;"
+          },
+          {
+            "query": " INSERT INTO `Context`  (`id`, `type_id`, `name`,   `create_time_since_epoch`, `last_update_time_since_epoch`)  VALUES (1, 2, 'name1', 1, 0); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 2 FROM `Artifact`; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Artifact`    WHERE `id` = 1 and `type_id` = 2 and `uri` = 'uri1'  ); "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Artifact`    WHERE `id` = 2 and `type_id` = 3 and `uri` = 'uri2'  ); "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `Execution`; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Execution`    WHERE `id` = 1 and `type_id` = 2  ); "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Context`    WHERE `id` = 1 and `type_id` = 2  ); "
+          }
+        ]
+      }
+    },
+    "5": {
+      "upgradeQueries": [
+        {
+          "query": " CREATE TABLE `ArtifactTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `uri` TEXT,    `state` INT,    `name` VARCHAR(255),    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ArtifactTemp` (`id`, `type_id`, `uri`)  SELECT * FROM `Artifact`; "
+        },
+        {
+          "query": " DROP TABLE `Artifact`; "
+        },
+        {
+          "query": " ALTER TABLE `ArtifactTemp` RENAME TO `Artifact`; "
+        },
+        {
+          "query": " CREATE TABLE `ExecutionTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `last_known_state` INT,    `name` VARCHAR(255),    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ExecutionTemp` (`id`, `type_id`)  SELECT * FROM `Execution`; "
+        },
+        {
+          "query": " DROP TABLE `Execution`; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionTemp` RENAME TO `Execution`; "
+        },
+        {
+          "query": " ALTER TABLE `Context`  ADD COLUMN `create_time_since_epoch` INT NOT NULL DEFAULT 0; "
+        },
+        {
+          "query": " ALTER TABLE `Context`  ADD COLUMN      `last_update_time_since_epoch` INT NOT NULL DEFAULT 0; "
+        }
+      ],
+      "upgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `Artifact`;"
+          },
+          {
+            "query": " INSERT INTO `Artifact`  (`id`, `type_id`, `uri`) VALUES (1, 2, 'uri1'); "
+          },
+          {
+            "query": "DELETE FROM `Execution`;"
+          },
+          {
+            "query": " INSERT INTO `Execution`  (`id`, `type_id`) VALUES (1, 3); "
+          },
+          {
+            "query": " CREATE TABLE `Context` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    UNIQUE(`type_id`, `name`)  ); "
+          },
+          {
+            "query": " INSERT INTO `Context`  (`id`, `type_id`, `name`) VALUES (1, 2, 'name1'); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT `id`, `type_id`, `uri`, `state`, `name`,           `create_time_since_epoch`,           `last_update_time_since_epoch`    FROM `Artifact`    WHERE `id` = 1 AND `type_id` = 2 AND `uri` = 'uri1' AND          `create_time_since_epoch` = 0 AND          `last_update_time_since_epoch` = 0  ) as T1; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT `id`, `type_id`, `last_known_state`, `name`,           `create_time_since_epoch`,           `last_update_time_since_epoch`    FROM `Execution`    WHERE `id` = 1 AND `type_id` = 3 AND          `create_time_since_epoch` = 0 AND          `last_update_time_since_epoch` = 0  ) as T1; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT `id`, `type_id`, `name`,           `create_time_since_epoch`,           `last_update_time_since_epoch`    FROM `Context`    WHERE `id` = 1 AND `type_id` = 2 AND `name` = 'name1' AND          `create_time_since_epoch` = 0 AND          `last_update_time_since_epoch` = 0  ) as T1; "
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " DROP TABLE `ParentType`; "
+        },
+        {
+          "query": " DROP TABLE `ParentContext`; "
+        },
+        {
+          "query": " CREATE TABLE `TypeTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `name` VARCHAR(255) NOT NULL,    `type_kind` TINYINT(1) NOT NULL,    `input_type` TEXT,    `output_type` TEXT ); "
+        },
+        {
+          "query": " INSERT INTO `TypeTemp`  SELECT `id`, `name`, `type_kind`, `input_type`, `output_type` FROM `Type`; "
+        },
+        {
+          "query": " DROP TABLE `Type`; "
+        },
+        {
+          "query": " ALTER TABLE `TypeTemp` RENAME TO `Type`; "
+        },
+        {
+          "query": " DROP INDEX `idx_artifact_uri`; "
+        },
+        {
+          "query": " DROP INDEX`idx_artifact_create_time_since_epoch`; "
+        },
+        {
+          "query": " DROP INDEX `idx_artifact_last_update_time_since_epoch`; "
+        },
+        {
+          "query": " DROP INDEX `idx_event_artifact_id`; "
+        },
+        {
+          "query": " DROP INDEX `idx_event_execution_id`; "
+        },
+        {
+          "query": " DROP INDEX `idx_execution_create_time_since_epoch`; "
+        },
+        {
+          "query": " DROP INDEX `idx_execution_last_update_time_since_epoch`; "
+        },
+        {
+          "query": " DROP INDEX `idx_context_create_time_since_epoch`; "
+        },
+        {
+          "query": " DROP INDEX `idx_context_last_update_time_since_epoch`; "
+        }
+      ],
+      "downgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `Type`;"
+          },
+          {
+            "query": " INSERT INTO `Type`  (`id`, `name`, `version`, `type_kind`,   `description`, `input_type`, `output_type`)  VALUES (1, 't1', 'v1', 1, 'desc1', 'input1', 'output1'); "
+          },
+          {
+            "query": " INSERT INTO `Type`  (`id`, `name`, `version`, `type_kind`,   `description`, `input_type`, `output_type`)  VALUES (2, 't2', 'v2', 2, 'desc2', 'input2', 'output2'); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 2 FROM `Type`; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Type`    WHERE `id` = 1 AND `name` = 't1' AND type_kind = 1    AND `input_type` = 'input1' AND `output_type` = 'output1' ); "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Artifact'        AND `name` LIKE 'idx_artifact_%'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Event'        AND `name` LIKE 'idx_event_%'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `tbl_name` = 'ParentType'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `tbl_name` = 'ParentContext'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'ParentContext'        AND `name` LIKE 'idx_parentcontext_%'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Type'        AND `name` LIKE 'idx_type_%'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Execution'        AND `name` LIKE 'idx_execution_%'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Context'        AND `name` LIKE 'idx_context_%'; "
+          }
+        ]
+      }
+    },
+    "6": {
+      "upgradeQueries": [
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ParentType` (    `type_id` INT NOT NULL,    `parent_type_id` INT NOT NULL,  PRIMARY KEY (`type_id`, `parent_type_id`)); "
+        },
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ParentContext` (    `context_id` INT NOT NULL,    `parent_context_id` INT NOT NULL,  PRIMARY KEY (`context_id`, `parent_context_id`)); "
+        },
+        {
+          "query": " CREATE TABLE `TypeTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `name` VARCHAR(255) NOT NULL,    `version` VARCHAR(255),    `type_kind` TINYINT(1) NOT NULL,    `description` TEXT,    `input_type` TEXT,    `output_type` TEXT ); "
+        },
+        {
+          "query": " INSERT INTO `TypeTemp`  (`id`, `name`, `type_kind`, `input_type`, `output_type`)  SELECT * FROM `Type`; "
+        },
+        {
+          "query": " DROP TABLE `Type`; "
+        },
+        {
+          "query": " ALTER TABLE `TypeTemp` rename to `Type`; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_uri`  ON `Artifact`(`uri`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_artifact_create_time_since_epoch`  ON `Artifact`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_artifact_last_update_time_since_epoch`  ON `Artifact`(`last_update_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_event_artifact_id`  ON `Event`(`artifact_id`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_event_execution_id`  ON `Event`(`execution_id`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS  `idx_parentcontext_parent_context_id`  ON `ParentContext`(`parent_context_id`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_type_name`  ON `Type`(`name`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_execution_create_time_since_epoch`  ON `Execution`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_execution_last_update_time_since_epoch`  ON `Execution`(`last_update_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_context_create_time_since_epoch`  ON `Context`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_context_last_update_time_since_epoch`  ON `Context`(`last_update_time_since_epoch`); "
+        }
+      ],
+      "upgradeVerification": {
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 1 FROM `Type` WHERE  `id` = 1 AND `type_kind` = 1 AND `name` = 'artifact_type'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `Type` WHERE  `id` = 2 AND `type_kind` = 0 AND `name` = 'execution_type'  AND `input_type` = 'input' AND `output_type` = 'output'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM (    SELECT `type_id`, `parent_type_id`    FROM `ParentType`  ); "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM (    SELECT `context_id`, `parent_context_id`    FROM `ParentContext`  ); "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Artifact'        AND `name` = 'idx_artifact_uri'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Artifact'        AND `name` = 'idx_artifact_create_time_since_epoch'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Artifact' AND        `name` = 'idx_artifact_last_update_time_since_epoch'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Event'        AND `name` = 'idx_event_artifact_id'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Event'        AND `name` = 'idx_event_execution_id'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'ParentContext'        AND `name` = 'idx_parentcontext_parent_context_id'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Type'        AND `name` = 'idx_type_name'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Execution'        AND `name` = 'idx_execution_create_time_since_epoch';"
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Execution' AND        `name` = 'idx_execution_last_update_time_since_epoch';"
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Context'        AND `name` = 'idx_context_create_time_since_epoch';"
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Context' AND        `name` = 'idx_context_last_update_time_since_epoch';"
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ArtifactPropertyTemp` (    `artifact_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,  PRIMARY KEY (`artifact_id`, `name`, `is_custom_property`)); "
+        },
+        {
+          "query": " INSERT INTO `ArtifactPropertyTemp`   SELECT `artifact_id`, `name`,  `is_custom_property`,         `int_value`, `double_value`, `string_value`  FROM `ArtifactProperty`; "
+        },
+        {
+          "query": " DROP TABLE `ArtifactProperty`; "
+        },
+        {
+          "query": " ALTER TABLE `ArtifactPropertyTemp`   RENAME TO `ArtifactProperty`; "
+        },
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ExecutionPropertyTemp` (    `execution_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,  PRIMARY KEY (`execution_id`, `name`, `is_custom_property`)); "
+        },
+        {
+          "query": " INSERT INTO `ExecutionPropertyTemp`  SELECT `execution_id`, `name`,  `is_custom_property`,      `int_value`, `double_value`, `string_value`  FROM `ExecutionProperty`; "
+        },
+        {
+          "query": " DROP TABLE `ExecutionProperty`; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionPropertyTemp`   RENAME TO `ExecutionProperty`; "
+        },
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ContextPropertyTemp` (    `context_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,  PRIMARY KEY (`context_id`, `name`, `is_custom_property`)); "
+        },
+        {
+          "query": " INSERT INTO `ContextPropertyTemp`  SELECT `context_id`, `name`,  `is_custom_property`,         `int_value`, `double_value`, `string_value`  FROM `ContextProperty`; "
+        },
+        {
+          "query": " DROP TABLE `ContextProperty`; "
+        },
+        {
+          "query": " ALTER TABLE `ContextPropertyTemp`   RENAME TO `ContextProperty`; "
+        },
+        {
+          "query": " DROP INDEX `idx_eventpath_event_id`; "
+        }
+      ],
+      "downgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `ArtifactProperty`;"
+          },
+          {
+            "query": "DELETE FROM `ExecutionProperty`;"
+          },
+          {
+            "query": "DELETE FROM `ContextProperty`;"
+          },
+          {
+            "query": " INSERT INTO `ArtifactProperty` (`artifact_id`,      `is_custom_property`, `name`, `string_value`)  VALUES (1, 0, 'p1', 'abc'); "
+          },
+          {
+            "query": " INSERT INTO `ExecutionProperty` (`execution_id`,      `is_custom_property`, `name`, `int_value`)  VALUES (1, 1, 'p1', 1); "
+          },
+          {
+            "query": " INSERT INTO `ContextProperty` (`context_id`,      `is_custom_property`, `name`, `double_value`)  VALUES (1, 0, 'p1', 1.0); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ArtifactProperty')  WHERE `name` = 'byte_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ExecutionProperty')  WHERE `name` = 'byte_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ContextProperty')  WHERE `name` = 'byte_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'EventPath'        AND `name` LIKE 'idx_eventpath_%'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `ArtifactProperty`  WHERE `artifact_id` = 1 AND `is_custom_property` = 0 AND        `name` = 'p1' AND `string_value` = 'abc'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `ExecutionProperty`  WHERE `execution_id` = 1 AND `is_custom_property` = 1 AND         `name` = 'p1' AND `int_value` = 1; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `ContextProperty`  WHERE `context_id` = 1  AND `is_custom_property` = 0 AND         `name` = 'p1' AND `double_value` = 1.0; "
+          }
+        ]
+      }
+    },
+    "7": {
+      "upgradeQueries": [
+        {
+          "query": " ALTER TABLE `ArtifactProperty`  ADD COLUMN `byte_value` BLOB; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionProperty`  ADD COLUMN `byte_value` BLOB; "
+        },
+        {
+          "query": " ALTER TABLE `ContextProperty`  ADD COLUMN `byte_value` BLOB; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_eventpath_event_id`  ON `EventPath`(`event_id`); "
+        }
+      ],
+      "upgradeVerification": {
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM `ArtifactProperty` WHERE  `byte_value` IS NOT NULL; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `ExecutionProperty` WHERE  `byte_value` IS NOT NULL; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `ContextProperty` WHERE  `byte_value` IS NOT NULL; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'EventPath' AND        `name` = 'idx_eventpath_event_id';"
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " CREATE TABLE `EventTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `artifact_id` INT NOT NULL,    `execution_id` INT NOT NULL,    `type` INT NOT NULL,    `milliseconds_since_epoch` INT  ); "
+        },
+        {
+          "query": " INSERT INTO `EventTemp`  (`id`, `artifact_id`, `execution_id`, `type`,  `milliseconds_since_epoch`)  SELECT * FROM `Event`; "
+        },
+        {
+          "query": " DROP TABLE `Event`; "
+        },
+        {
+          "query": " ALTER TABLE `EventTemp` RENAME TO `Event`; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_event_artifact_id`  ON `Event`(`artifact_id`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_event_execution_id`  ON `Event`(`execution_id`); "
+        },
+        {
+          "query": " DROP INDEX `idx_artifact_property_int`; "
+        },
+        {
+          "query": " DROP INDEX `idx_artifact_property_double`; "
+        },
+        {
+          "query": " DROP INDEX `idx_artifact_property_string`; "
+        },
+        {
+          "query": " DROP INDEX `idx_execution_property_int`; "
+        },
+        {
+          "query": " DROP INDEX `idx_execution_property_double`; "
+        },
+        {
+          "query": " DROP INDEX `idx_execution_property_string`; "
+        },
+        {
+          "query": " DROP INDEX `idx_context_property_int`; "
+        },
+        {
+          "query": " DROP INDEX `idx_context_property_double`; "
+        },
+        {
+          "query": " DROP INDEX `idx_context_property_string`; "
+        }
+      ],
+      "downgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `Event`;"
+          },
+          {
+            "query": " INSERT INTO `Event`  (`id`, `artifact_id`, `execution_id`, `type`,  `milliseconds_since_epoch`)  VALUES (1, 1, 1, 1, 1); "
+          },
+          {
+            "query": "DELETE FROM `EventPath`;"
+          },
+          {
+            "query": " INSERT INTO `EventPath`  (`event_id`, `is_index_step`, `step_index`, `step_key`)  VALUES (1, 1, 1, 'a'); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 1 FROM `Event`  WHERE `artifact_id` = 1 AND `execution_id` = 1; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `EventPath`  WHERE `event_id` = 1; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Event' AND        `name` = 'idx_event_artifact_id'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Event' AND        `name` = 'idx_event_execution_id'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'EventPath' AND        `name` = 'idx_eventpath_event_id'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'ArtifactProperty'        AND `name` LIKE 'idx_artifact_property_%'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'ExecutionProperty'        AND `name` LIKE 'idx_execution_property_%'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'ContextProperty'        AND `name` LIKE 'idx_context_property_%'; "
+          }
+        ]
+      },
+      "dbVerification": {
+        "totalNumTables": 15,
+        "totalNumIndexes": 23
+      }
+    },
+    "8": {
+      "upgradeQueries": [
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_int`  ON `ArtifactProperty`(`name`, `is_custom_property`,  `int_value`)  WHERE `int_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_double`  ON `ArtifactProperty`(`name`, `is_custom_property`,  `double_value`)  WHERE `double_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_string`  ON `ArtifactProperty`(`name`, `is_custom_property`,  `string_value`)  WHERE `string_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_int`  ON `ExecutionProperty`(`name`, `is_custom_property`,  `int_value`)  WHERE `int_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_double`  ON `ExecutionProperty`(`name`, `is_custom_property`,  `double_value`)  WHERE `double_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_string`  ON `ExecutionProperty`(`name`, `is_custom_property`,  `string_value`)  WHERE `string_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_int`  ON `ContextProperty`(`name`, `is_custom_property`,  `int_value`)  WHERE `int_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_double`  ON `ContextProperty`(`name`, `is_custom_property`,  `double_value`)  WHERE `double_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_string`  ON `ContextProperty`(`name`, `is_custom_property`,  `string_value`)  WHERE `string_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE TABLE `EventTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `artifact_id` INT NOT NULL,    `execution_id` INT NOT NULL,    `type` INT NOT NULL,    `milliseconds_since_epoch` INT,    UNIQUE(`artifact_id`, `execution_id`, `type`)  ); "
+        },
+        {
+          "query": " INSERT OR IGNORE INTO `EventTemp`  (`id`, `artifact_id`, `execution_id`, `type`,  `milliseconds_since_epoch`)  SELECT * FROM `Event` ORDER BY `id` desc; "
+        },
+        {
+          "query": " DROP TABLE `Event`; "
+        },
+        {
+          "query": " ALTER TABLE `EventTemp` RENAME TO `Event`; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_event_execution_id`  ON `Event`(`execution_id`); "
+        },
+        {
+          "query": " DELETE FROM `EventPath`    WHERE event_id not in ( SELECT `id` from Event ) "
+        }
+      ],
+      "upgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `Event`;"
+          },
+          {
+            "query": " INSERT INTO `Event`  (`id`, `artifact_id`, `execution_id`, `type`,  `milliseconds_since_epoch`)  VALUES (1, 1, 1, 1, 1); "
+          },
+          {
+            "query": " INSERT INTO `Event`  (`id`, `artifact_id`, `execution_id`, `type`,  `milliseconds_since_epoch`)  VALUES (2, 1, 1, 1, 2); "
+          },
+          {
+            "query": "DELETE FROM `EventPath`;"
+          },
+          {
+            "query": " INSERT INTO `EventPath`  (`event_id`, `is_index_step`, `step_index`, `step_key`)  VALUES (1, 1, 1, 'a'); "
+          },
+          {
+            "query": " INSERT INTO `EventPath`  (`event_id`, `is_index_step`, `step_index`, `step_key`)  VALUES (2, 1, 1, 'b'); "
+          },
+          {
+            "query": " INSERT INTO `EventPath`  (`event_id`, `is_index_step`, `step_index`, `step_key`)  VALUES (2, 1, 2, 'c'); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 1 FROM `Event`  WHERE `artifact_id` = 1 AND `execution_id` = 1      AND `type` = 1;"
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Event`    WHERE `id` = 2 AND `artifact_id` = 1 AND         `execution_id` = 1 AND `type` = 1  ); "
+          },
+          {
+            "query": " SELECT count(*) = 2 FROM `EventPath`  WHERE `event_id` = 2; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `EventPath`  WHERE `event_id` = 2 AND `step_key` = 'b'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `EventPath`  WHERE `event_id` = 2 AND `step_key` = 'c'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `EventPath`  WHERE `event_id` = 1; "
+          },
+          {
+            "query": " SELECT count(*) = 2 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Event'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Event' AND        `name` = 'idx_event_artifact_id';"
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'Event' AND        `name` = 'idx_event_execution_id';"
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'EventPath' AND        `name` = 'idx_eventpath_event_id';"
+          },
+          {
+            "query": " SELECT count(*) = 3 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'ArtifactProperty'        AND `name` LIKE 'idx_artifact_property_%';"
+          },
+          {
+            "query": " SELECT count(*) = 3 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'ExecutionProperty'        AND `name` LIKE 'idx_execution_property_%';"
+          },
+          {
+            "query": " SELECT count(*) = 3 FROM `sqlite_master`  WHERE `type` = 'index' AND `tbl_name` = 'ContextProperty'        AND `name` LIKE 'idx_context_property_%';"
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " DROP INDEX `idx_type_external_id`; "
+        },
+        {
+          "query": " DROP INDEX `idx_artifact_external_id`; "
+        },
+        {
+          "query": " DROP INDEX `idx_execution_external_id`; "
+        },
+        {
+          "query": " DROP INDEX `idx_context_external_id`; "
+        },
+        {
+          "query": " CREATE TABLE `TypeTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `name` VARCHAR(255) NOT NULL,    `version` VARCHAR(255),    `type_kind` TINYINT(1) NOT NULL,    `description` TEXT,    `input_type` TEXT,    `output_type` TEXT ); "
+        },
+        {
+          "query": " INSERT INTO `TypeTemp`  SELECT `id`, `name`, `version`, `type_kind`, `description`,        `input_type`, `output_type`  FROM `Type`; "
+        },
+        {
+          "query": " DROP TABLE `Type`; "
+        },
+        {
+          "query": " ALTER TABLE `TypeTemp` rename to `Type`; "
+        },
+        {
+          "query": " CREATE TABLE `ArtifactTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `uri` TEXT,    `state` INT,    `name` VARCHAR(255),    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ArtifactTemp`  SELECT `id`, `type_id`, `uri`, `state`, `name`,         `create_time_since_epoch`,         `last_update_time_since_epoch` FROM `Artifact`; "
+        },
+        {
+          "query": " DROP TABLE `Artifact`; "
+        },
+        {
+          "query": " ALTER TABLE `ArtifactTemp` RENAME TO `Artifact`; "
+        },
+        {
+          "query": " CREATE TABLE `ExecutionTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `last_known_state` INT,    `name` VARCHAR(255),    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ExecutionTemp`  SELECT `id`, `type_id`, `last_known_state`, `name`,         `create_time_since_epoch`,         `last_update_time_since_epoch`  FROM `Execution`; "
+        },
+        {
+          "query": " DROP TABLE `Execution`; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionTemp` RENAME TO `Execution`; "
+        },
+        {
+          "query": " CREATE TABLE `ContextTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ContextTemp`  SELECT `id`, `type_id`, `name`,         `create_time_since_epoch`,         `last_update_time_since_epoch`  FROM `Context`; "
+        },
+        {
+          "query": " DROP TABLE `Context`; "
+        },
+        {
+          "query": " ALTER TABLE `ContextTemp` RENAME TO `Context`; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_uri`  ON `Artifact`(`uri`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_artifact_create_time_since_epoch`  ON `Artifact`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_artifact_last_update_time_since_epoch`  ON `Artifact`(`last_update_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_type_name`  ON `Type`(`name`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_execution_create_time_since_epoch`  ON `Execution`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_execution_last_update_time_since_epoch`  ON `Execution`(`last_update_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_context_create_time_since_epoch`  ON `Context`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_context_last_update_time_since_epoch`  ON `Context`(`last_update_time_since_epoch`); "
+        }
+      ],
+      "downgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `Type`;"
+          },
+          {
+            "query": " INSERT INTO `Type`  (`id`, `name`, `version`, `type_kind`,   `description`, `input_type`, `output_type`, `external_id`)  VALUES (1, 't1', 'v1', 1, 'desc1', 'input1', 'output1',            'type_1'); "
+          },
+          {
+            "query": "DELETE FROM `Artifact`;"
+          },
+          {
+            "query": " INSERT INTO `Artifact`  (`id`, `type_id`, `uri`, `state`, `name`, `external_id`,  `create_time_since_epoch`, `last_update_time_since_epoch`)  VALUES (1, 2, 'uri1', 1, NULL, 'artifact_1', 0, 1); "
+          },
+          {
+            "query": "DELETE FROM `Execution`;"
+          },
+          {
+            "query": " INSERT INTO `Execution`  (`id`, `type_id`, `last_known_state`, `name`, `external_id`,  `create_time_since_epoch`, `last_update_time_since_epoch`)  VALUES (1, 2, 1, NULL, 'execution_1', 0, 1); "
+          },
+          {
+            "query": "DELETE FROM `Context`;"
+          },
+          {
+            "query": " INSERT INTO `Context`  (`id`, `type_id`, `name`, `external_id`,  `create_time_since_epoch`, `last_update_time_since_epoch`)  VALUES (1, 2, 'name1', 'context_1', 1, 0); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 1 FROM `Type`; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Type`    WHERE `id` = 1 AND `name` = 't1' AND type_kind = 1    AND `input_type` = 'input1' AND `output_type` = 'output1' ); "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `Artifact`; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Artifact`    WHERE `id` = 1 and `type_id` = 2 and `uri` = 'uri1'  ); "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `Execution`; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Execution`    WHERE `id` = 1 and `type_id` = 2  ); "
+          },
+          {
+            "query": " SELECT COUNT(*) = 1 FROM `Context`; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM (    SELECT * FROM `Context`    WHERE `id` = 1 and `type_id` = 2  ); "
+          }
+        ]
+      },
+      "dbVerification": {
+        "totalNumTables": 15,
+        "totalNumIndexes": 32
+      }
+    },
+    "9": {
+      "upgradeQueries": [
+        {
+          "query": " CREATE TABLE `TypeTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `name` VARCHAR(255) NOT NULL,    `version` VARCHAR(255),    `type_kind` TINYINT(1) NOT NULL,    `description` TEXT,    `input_type` TEXT,    `output_type` TEXT,    `external_id` VARCHAR(255) UNIQUE ); "
+        },
+        {
+          "query": " INSERT INTO `TypeTemp` (`id`, `name`, `version`, `type_kind`,         `description`, `input_type`, `output_type`)  SELECT `id`, `name`, `version`, `type_kind`, `description`,        `input_type`, `output_type`  FROM `Type`; "
+        },
+        {
+          "query": " DROP TABLE `Type`; "
+        },
+        {
+          "query": " ALTER TABLE `TypeTemp` rename to `Type`; "
+        },
+        {
+          "query": " CREATE TABLE `ArtifactTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `uri` TEXT,    `state` INT,    `name` VARCHAR(255),    `external_id` VARCHAR(255) UNIQUE,    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ArtifactTemp` (`id`, `type_id`, `uri`, `state`,         `name`, `create_time_since_epoch`,         `last_update_time_since_epoch`)  SELECT `id`, `type_id`, `uri`, `state`, `name`,         `create_time_since_epoch`,         `last_update_time_since_epoch` FROM `Artifact`; "
+        },
+        {
+          "query": " DROP TABLE `Artifact`; "
+        },
+        {
+          "query": " ALTER TABLE `ArtifactTemp` RENAME TO `Artifact`; "
+        },
+        {
+          "query": " CREATE TABLE `ExecutionTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `last_known_state` INT,    `name` VARCHAR(255),    `external_id` VARCHAR(255) UNIQUE,    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ExecutionTemp` (`id`, `type_id`,         `last_known_state`, `name`,         `create_time_since_epoch`,         `last_update_time_since_epoch`)  SELECT `id`, `type_id`, `last_known_state`, `name`,         `create_time_since_epoch`,         `last_update_time_since_epoch`  FROM `Execution`; "
+        },
+        {
+          "query": " DROP TABLE `Execution`; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionTemp` RENAME TO `Execution`; "
+        },
+        {
+          "query": " CREATE TABLE `ContextTemp` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `external_id` VARCHAR(255) UNIQUE,    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+        },
+        {
+          "query": " INSERT INTO `ContextTemp` (`id`, `type_id`, `name`,         `create_time_since_epoch`,         `last_update_time_since_epoch`)  SELECT `id`, `type_id`, `name`,         `create_time_since_epoch`,         `last_update_time_since_epoch`  FROM `Context`; "
+        },
+        {
+          "query": " DROP TABLE `Context`; "
+        },
+        {
+          "query": " ALTER TABLE `ContextTemp` RENAME TO `Context`; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_uri`  ON `Artifact`(`uri`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_artifact_create_time_since_epoch`  ON `Artifact`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_artifact_last_update_time_since_epoch`  ON `Artifact`(`last_update_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_type_name`  ON `Type`(`name`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_execution_create_time_since_epoch`  ON `Execution`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_execution_last_update_time_since_epoch`  ON `Execution`(`last_update_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_context_create_time_since_epoch`  ON `Context`(`create_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS    `idx_context_last_update_time_since_epoch`  ON `Context`(`last_update_time_since_epoch`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_type_external_id`  ON `Type`(`external_id`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_external_id`  ON `Artifact`(`external_id`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_execution_external_id`  ON `Execution`(`external_id`); "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_context_external_id`  ON `Context`(`external_id`); "
+        }
+      ],
+      "upgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `Type`;"
+          },
+          {
+            "query": " INSERT INTO `Type` (`name`, `is_artifact_type`) VALUES  ('artifact_type', 1); "
+          },
+          {
+            "query": "DELETE FROM `Artifact`;"
+          },
+          {
+            "query": " INSERT INTO `Artifact`  (`id`, `type_id`)  VALUES (1, 2); "
+          },
+          {
+            "query": "DELETE FROM `Execution`;"
+          },
+          {
+            "query": " INSERT INTO `Execution`  (`id`, `type_id`)  VALUES (1, 2); "
+          },
+          {
+            "query": "DELETE FROM `Context`;"
+          },
+          {
+            "query": " INSERT INTO `Context`  (`id`, `type_id`, `name`)  VALUES (1, 2, 'name1'); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT COUNT(*) = 1 FROM `Type`; "
+          },
+          {
+            "query": " SELECT COUNT(*) = 1 FROM (    SELECT * FROM `Type`    WHERE `name` = 'artifact_type' AND          `external_id` IS NULL  ) AS T1; "
+          },
+          {
+            "query": " SELECT COUNT(*) = 1 FROM `Artifact`; "
+          },
+          {
+            "query": " SELECT COUNT(*) = 1 FROM (    SELECT * FROM `Artifact`    WHERE `id` = 1 AND `type_id` = 2 AND          `external_id` IS NULL  ) AS T1; "
+          },
+          {
+            "query": " SELECT COUNT(*) = 1 FROM `Execution`; "
+          },
+          {
+            "query": " SELECT COUNT(*) = 1 FROM (    SELECT * FROM `Execution`    WHERE `id` = 1 AND `type_id` = 2 AND           `external_id` IS NULL  ) AS T1; "
+          },
+          {
+            "query": " SELECT COUNT(*) = 1 FROM `Context`; "
+          },
+          {
+            "query": " SELECT COUNT(*) = 1 FROM (    SELECT * FROM `Context`    WHERE `id` = 1 AND `type_id` = 2 AND `name` = 'name1' AND          `external_id` IS NULL  ) as T1; "
+          }
+        ]
+      },
+      "downgradeQueries": [
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ArtifactPropertyTemp` (    `artifact_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,    `byte_value` BLOB,  PRIMARY KEY (`artifact_id`, `name`, `is_custom_property`)); "
+        },
+        {
+          "query": " INSERT INTO `ArtifactPropertyTemp`   SELECT `artifact_id`, `name`,  `is_custom_property`,         `int_value`, `double_value`, `string_value`,         `byte_value`  FROM `ArtifactProperty`; "
+        },
+        {
+          "query": " DROP TABLE `ArtifactProperty`; "
+        },
+        {
+          "query": " ALTER TABLE `ArtifactPropertyTemp`   RENAME TO `ArtifactProperty`; "
+        },
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ExecutionPropertyTemp` (    `execution_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,    `byte_value` BLOB,  PRIMARY KEY (`execution_id`, `name`, `is_custom_property`)); "
+        },
+        {
+          "query": " INSERT INTO `ExecutionPropertyTemp`  SELECT `execution_id`, `name`,  `is_custom_property`,      `int_value`, `double_value`, `string_value`,      `byte_value`  FROM `ExecutionProperty`; "
+        },
+        {
+          "query": " DROP TABLE `ExecutionProperty`; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionPropertyTemp`   RENAME TO `ExecutionProperty`; "
+        },
+        {
+          "query": " CREATE TABLE IF NOT EXISTS `ContextPropertyTemp` (    `context_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,    `byte_value` BLOB,  PRIMARY KEY (`context_id`, `name`, `is_custom_property`)); "
+        },
+        {
+          "query": " INSERT INTO `ContextPropertyTemp`  SELECT `context_id`, `name`,  `is_custom_property`,         `int_value`, `double_value`, `string_value`,         `byte_value`  FROM `ContextProperty`; "
+        },
+        {
+          "query": " DROP TABLE `ContextProperty`; "
+        },
+        {
+          "query": " ALTER TABLE `ContextPropertyTemp`   RENAME TO `ContextProperty`; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_int`  ON `ArtifactProperty`(`name`, `is_custom_property`,  `int_value`)  WHERE `int_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_double`  ON `ArtifactProperty`(`name`, `is_custom_property`,  `double_value`)  WHERE `double_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_string`  ON `ArtifactProperty`(`name`, `is_custom_property`,  `string_value`)  WHERE `string_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_int`  ON `ExecutionProperty`(`name`, `is_custom_property`,  `int_value`)  WHERE `int_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_double`  ON `ExecutionProperty`(`name`, `is_custom_property`,  `double_value`)  WHERE `double_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_string`  ON `ExecutionProperty`(`name`, `is_custom_property`,  `string_value`)  WHERE `string_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_int`  ON `ContextProperty`(`name`, `is_custom_property`,  `int_value`)  WHERE `int_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_double`  ON `ContextProperty`(`name`, `is_custom_property`,  `double_value`)  WHERE `double_value` IS NOT NULL; "
+        },
+        {
+          "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_string`  ON `ContextProperty`(`name`, `is_custom_property`,  `string_value`)  WHERE `string_value` IS NOT NULL; "
+        }
+      ],
+      "downgradeVerification": {
+        "previousVersionSetupQueries": [
+          {
+            "query": "DELETE FROM `ArtifactProperty`;"
+          },
+          {
+            "query": "DELETE FROM `ExecutionProperty`;"
+          },
+          {
+            "query": "DELETE FROM `ContextProperty`;"
+          },
+          {
+            "query": " INSERT INTO `ArtifactProperty` (`artifact_id`,      `is_custom_property`, `name`, `string_value`)  VALUES (1, 0, 'p1', 'abc'); "
+          },
+          {
+            "query": " INSERT INTO `ExecutionProperty` (`execution_id`,      `is_custom_property`, `name`, `int_value`)  VALUES (1, 1, 'p1', 1); "
+          },
+          {
+            "query": " INSERT INTO `ContextProperty` (`context_id`,      `is_custom_property`, `name`, `double_value`)  VALUES (1, 0, 'p1', 1.0); "
+          }
+        ],
+        "postMigrationVerificationQueries": [
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ArtifactProperty')  WHERE `name` = 'proto_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ArtifactProperty')  WHERE `name` = 'bool_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ExecutionProperty')  WHERE `name` = 'proto_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ExecutionProperty')  WHERE `name` = 'bool_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ContextProperty')  WHERE `name` = 'proto_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 0 FROM         PRAGMA_TABLE_INFO('ContextProperty')  WHERE `name` = 'bool_value'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `ArtifactProperty`  WHERE `artifact_id` = 1 AND `is_custom_property` = 0 AND        `name` = 'p1' AND `string_value` = 'abc'; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `ExecutionProperty`  WHERE `execution_id` = 1 AND `is_custom_property` = 1 AND         `name` = 'p1' AND `int_value` = 1; "
+          },
+          {
+            "query": " SELECT count(*) = 1 FROM `ContextProperty`  WHERE `context_id` = 1  AND `is_custom_property` = 0 AND         `name` = 'p1' AND `double_value` = 1.0; "
+          }
+        ]
+      },
+      "dbVerification": {
+        "totalNumTables": 15,
+        "totalNumIndexes": 40
+      }
+    },
+    "10": {
+      "upgradeQueries": [
+        {
+          "query": " ALTER TABLE `ArtifactProperty`  ADD COLUMN `proto_value` BLOB; "
+        },
+        {
+          "query": " ALTER TABLE `ArtifactProperty`  ADD COLUMN `bool_value` BOOLEAN; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionProperty`  ADD COLUMN `proto_value` BLOB; "
+        },
+        {
+          "query": " ALTER TABLE `ExecutionProperty`  ADD COLUMN `bool_value` BOOLEAN; "
+        },
+        {
+          "query": " ALTER TABLE `ContextProperty`  ADD COLUMN `proto_value` BLOB;"
+        },
+        {
+          "query": " ALTER TABLE `ContextProperty`  ADD COLUMN `bool_value` BOOLEAN; "
+        }
+      ],
+      "dbVerification": {
+        "totalNumTables": 15,
+        "totalNumIndexes": 40
+      }
+    }
+  },
+  "checkMlmdEnvTable": {
+    "query": " SELECT `schema_version` FROM `MLMDEnv`; "
+  },
+  "updateSchemaVersion": {
+    "query": " UPDATE `MLMDEnv` SET `schema_version` = $0; ",
+    "parameterNum": 1
+  },
+  "checkTablesInV0132": {
+    "query": " SELECT `Type`.`is_artifact_type` from  `Artifact`, `Event`, `Execution`, `Type`, `ArtifactProperty`,  `EventPath`, `ExecutionProperty`, `TypeProperty` LIMIT 1; "
+  },
+  "insertSchemaVersion": {
+    "query": " INSERT INTO `MLMDEnv`(`schema_version`) VALUES($0); ",
+    "parameterNum": 1
+  },
+  "dropContextTable": {
+    "query": " DROP TABLE IF EXISTS `Context`; "
+  },
+  "createContextTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `Context` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `type_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `external_id` VARCHAR(255) UNIQUE,    `create_time_since_epoch` INT NOT NULL DEFAULT 0,    `last_update_time_since_epoch` INT NOT NULL DEFAULT 0,    UNIQUE(`type_id`, `name`)  ); "
+  },
+  "checkContextTable": {
+    "query": " SELECT `id`, `type_id`, `name`,         `create_time_since_epoch`, `last_update_time_since_epoch`  FROM `Context` LIMIT 1; "
+  },
+  "insertContext": {
+    "query": " INSERT INTO `Context`(    `type_id`, `name`, `external_id`,    `create_time_since_epoch`, `last_update_time_since_epoch` ) VALUES($0, $1, $2, $3, $4);",
+    "parameterNum": 5
+  },
+  "selectContextById": {
+    "query": " SELECT C.id, C.type_id, C.name, C.external_id,         C.create_time_since_epoch, C.last_update_time_since_epoch,         T.name AS `type`, T.version AS type_version,         T.description AS type_description,         T.external_id AS type_external_id  FROM `Context` AS C  LEFT JOIN `Type` AS T ON (T.id = C.type_id)  WHERE C.id IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectContextsByTypeId": {
+    "query": " SELECT `id` from `Context` WHERE `type_id` = $0; ",
+    "parameterNum": 1
+  },
+  "updateContext": {
+    "query": " UPDATE `Context`  SET `type_id` = $1, `name` = $2, `external_id` = $3,      `last_update_time_since_epoch` = $4  WHERE id = $0;",
+    "parameterNum": 5
+  },
+  "dropContextPropertyTable": {
+    "query": " DROP TABLE IF EXISTS `ContextProperty`; "
+  },
+  "createContextPropertyTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `ContextProperty` (    `context_id` INT NOT NULL,    `name` VARCHAR(255) NOT NULL,    `is_custom_property` TINYINT(1) NOT NULL,    `int_value` INT,    `double_value` DOUBLE,    `string_value` TEXT,    `byte_value` BLOB,    `proto_value` BLOB,    `bool_value` BOOLEAN,  PRIMARY KEY (`context_id`, `name`, `is_custom_property`)); "
+  },
+  "checkContextPropertyTable": {
+    "query": " SELECT `context_id`, `name`, `is_custom_property`,         `int_value`, `double_value`, `string_value`, `byte_value`,         `proto_value`, `bool_value`  FROM `ContextProperty` LIMIT 1; "
+  },
+  "insertContextProperty": {
+    "query": " INSERT INTO `ContextProperty`(    `context_id`, `name`, `is_custom_property`, `$0` ) VALUES($1, $2, $3, $4);",
+    "parameterNum": 5
+  },
+  "selectContextPropertyByContextId": {
+    "query": " SELECT `context_id` as `id`, `name` as `key`,         `is_custom_property`,         `int_value`, `double_value`, `string_value`, `proto_value`,        `bool_value`  from `ContextProperty`  WHERE `context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "updateContextProperty": {
+    "query": " UPDATE `ContextProperty`  SET `$0` = $1  WHERE `context_id` = $2 and `name` = $3;",
+    "parameterNum": 4
+  },
+  "deleteContextProperty": {
+    "query": " DELETE FROM `ContextProperty`  WHERE `context_id` = $0 and `name` = $1;",
+    "parameterNum": 2
+  },
+  "dropAssociationTable": {
+    "query": " DROP TABLE IF EXISTS `Association`; "
+  },
+  "createAssociationTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `Association` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `context_id` INT NOT NULL,    `execution_id` INT NOT NULL,    UNIQUE(`context_id`, `execution_id`)  ); "
+  },
+  "checkAssociationTable": {
+    "query": " SELECT `id`, `context_id`, `execution_id`  FROM `Association` LIMIT 1; "
+  },
+  "insertAssociation": {
+    "query": " INSERT INTO `Association`(    `context_id`, `execution_id` ) VALUES($0, $1);",
+    "parameterNum": 2
+  },
+  "selectAssociationByContextId": {
+    "query": " SELECT `id`, `context_id`, `execution_id`  from `Association`  WHERE `context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "dropAttributionTable": {
+    "query": " DROP TABLE IF EXISTS `Attribution`; "
+  },
+  "createAttributionTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `Attribution` (    `id` INTEGER PRIMARY KEY AUTOINCREMENT,    `context_id` INT NOT NULL,    `artifact_id` INT NOT NULL,    UNIQUE(`context_id`, `artifact_id`)  ); "
+  },
+  "checkAttributionTable": {
+    "query": " SELECT `id`, `context_id`, `artifact_id`  FROM `Attribution` LIMIT 1; "
+  },
+  "insertAttribution": {
+    "query": " INSERT INTO `Attribution`(    `context_id`, `artifact_id` ) VALUES($0, $1);",
+    "parameterNum": 2
+  },
+  "selectAttributionByContextId": {
+    "query": " SELECT `id`, `context_id`, `artifact_id`  from `Attribution`  WHERE `context_id` = $0; ",
+    "parameterNum": 1
+  },
+  "selectContextByTypeIdAndName": {
+    "query": " SELECT `id` from `Context` WHERE `type_id` = $0 and `name` = $1; ",
+    "parameterNum": 2
+  },
+  "selectArtifactByTypeIdAndName": {
+    "query": " SELECT `id` from `Artifact` WHERE `type_id` = $0 and `name` = $1; ",
+    "parameterNum": 2
+  },
+  "selectExecutionByTypeIdAndName": {
+    "query": " SELECT `id` from `Execution` WHERE `type_id` = $0 and `name` = $1;",
+    "parameterNum": 2
+  },
+  "selectEventByArtifactIds": {
+    "query": " SELECT `id`, `artifact_id`, `execution_id`,         `type`, `milliseconds_since_epoch`  from `Event`  WHERE `artifact_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectEventByExecutionIds": {
+    "query": " SELECT `id`, `artifact_id`, `execution_id`,         `type`, `milliseconds_since_epoch`  from `Event`  WHERE `execution_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectEventPathByEventIds": {
+    "query": " SELECT `event_id`, `is_index_step`, `step_index`, `step_key`  from `EventPath`  WHERE `event_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "dropParentTypeTable": {
+    "query": " DROP TABLE IF EXISTS `ParentType`; "
+  },
+  "createParentTypeTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `ParentType` (    `type_id` INT NOT NULL,    `parent_type_id` INT NOT NULL,  PRIMARY KEY (`type_id`, `parent_type_id`)); "
+  },
+  "checkParentTypeTable": {
+    "query": " SELECT `type_id`, `parent_type_id`  FROM `ParentType` LIMIT 1; "
+  },
+  "dropParentContextTable": {
+    "query": " DROP TABLE IF EXISTS `ParentContext`;"
+  },
+  "createParentContextTable": {
+    "query": " CREATE TABLE IF NOT EXISTS `ParentContext` (    `context_id` INT NOT NULL,    `parent_context_id` INT NOT NULL,  PRIMARY KEY (`context_id`, `parent_context_id`)); "
+  },
+  "checkParentContextTable": {
+    "query": " SELECT `context_id`, `parent_context_id`  FROM `ParentContext` LIMIT 1; "
+  },
+  "secondaryIndices": [
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_uri`  ON `Artifact`(`uri`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS    `idx_artifact_create_time_since_epoch`  ON `Artifact`(`create_time_since_epoch`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS    `idx_artifact_last_update_time_since_epoch`  ON `Artifact`(`last_update_time_since_epoch`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_event_execution_id`  ON `Event`(`execution_id`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_parentcontext_parent_context_id`  ON `ParentContext`(`parent_context_id`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_type_name`  ON `Type`(`name`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS    `idx_execution_create_time_since_epoch`  ON `Execution`(`create_time_since_epoch`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS    `idx_execution_last_update_time_since_epoch`  ON `Execution`(`last_update_time_since_epoch`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS    `idx_context_create_time_since_epoch`  ON `Context`(`create_time_since_epoch`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS    `idx_context_last_update_time_since_epoch`  ON `Context`(`last_update_time_since_epoch`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_eventpath_event_id`  ON `EventPath`(`event_id`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_int`  ON `ArtifactProperty`(`name`, `is_custom_property`, `int_value`)  WHERE `int_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_double`  ON `ArtifactProperty`(`name`, `is_custom_property`, `double_value`)  WHERE `double_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_property_string`  ON `ArtifactProperty`(`name`, `is_custom_property`, `string_value`)  WHERE `string_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_int`  ON `ExecutionProperty`(`name`, `is_custom_property`, `int_value`)  WHERE `int_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_double`  ON `ExecutionProperty`(`name`, `is_custom_property`, `double_value`)  WHERE `double_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_execution_property_string`  ON `ExecutionProperty`(`name`, `is_custom_property`, `string_value`)  WHERE `string_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_int`  ON `ContextProperty`(`name`, `is_custom_property`, `int_value`)  WHERE `int_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_double`  ON `ContextProperty`(`name`, `is_custom_property`, `double_value`)  WHERE `double_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_context_property_string`  ON `ContextProperty`(`name`, `is_custom_property`, `string_value`)  WHERE `string_value` IS NOT NULL; "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_type_external_id`  ON `Type`(`external_id`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_artifact_external_id`  ON `Artifact`(`external_id`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_execution_external_id`  ON `Execution`(`external_id`); "
+    },
+    {
+      "query": " CREATE INDEX IF NOT EXISTS `idx_context_external_id`  ON `Context`(`external_id`); "
+    }
+  ],
+  "insertParentContext": {
+    "query": " INSERT INTO `ParentContext`(    `context_id`, `parent_context_id` ) VALUES($0, $1);",
+    "parameterNum": 2
+  },
+  "selectParentContextByContextId": {
+    "query": " SELECT `context_id`, `parent_context_id` From `ParentContext`  WHERE `context_id` = $0; ",
+    "parameterNum": 1
+  },
+  "selectParentContextByParentContextId": {
+    "query": " SELECT `context_id`, `parent_context_id` From `ParentContext`  WHERE `parent_context_id` = $0; ",
+    "parameterNum": 1
+  },
+  "insertParentType": {
+    "query": " INSERT INTO `ParentType`(`type_id`, `parent_type_id`)  VALUES($0, $1);",
+    "parameterNum": 2
+  },
+  "selectParentTypeByTypeId": {
+    "query": " SELECT `type_id`, `parent_type_id`  FROM `ParentType` WHERE `type_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectTypeByNameAndVersion": {
+    "query": " SELECT `id`, `name`, `version`, `description`, `external_id`,         `input_type`, `output_type` FROM `Type`  WHERE name = $0 AND version = $1 AND type_kind = $2; ",
+    "parameterNum": 3
+  },
+  "deleteContextsById": {
+    "query": "DELETE FROM `Context` WHERE `id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteContextsPropertiesByContextsId": {
+    "query": "DELETE FROM `ContextProperty` WHERE `context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteParentContextsByParentIds": {
+    "query": "DELETE FROM `ParentContext` WHERE `parent_context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteParentContextsByChildIds": {
+    "query": "DELETE FROM `ParentContext` WHERE `context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteArtifactsById": {
+    "query": "DELETE FROM `Artifact` WHERE `id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteArtifactsPropertiesByArtifactsId": {
+    "query": "DELETE FROM `ArtifactProperty` WHERE `artifact_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteExecutionsById": {
+    "query": "DELETE FROM `Execution` WHERE `id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteExecutionsPropertiesByExecutionsId": {
+    "query": "DELETE FROM `ExecutionProperty` WHERE `execution_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteEventsByArtifactsId": {
+    "query": "DELETE FROM `Event` WHERE `artifact_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteEventsByExecutionsId": {
+    "query": "DELETE FROM `Event` WHERE `execution_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteAssociationsByContextsId": {
+    "query": "DELETE FROM `Association` WHERE `context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteAssociationsByExecutionsId": {
+    "query": "DELETE FROM `Association` WHERE `execution_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteAttributionsByContextsId": {
+    "query": "DELETE FROM `Attribution` WHERE `context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteAttributionsByArtifactsId": {
+    "query": "DELETE FROM `Attribution` WHERE `artifact_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteEventPaths": {
+    "query": "DELETE FROM `EventPath` WHERE `event_id` NOT IN  (SELECT `id` FROM `Event`); "
+  },
+  "deleteParentType": {
+    "query": " DELETE FROM `ParentType`  WHERE `type_id` = $0 AND `parent_type_id` = $1;",
+    "parameterNum": 2
+  },
+  "selectTypesById": {
+    "query": " SELECT `id`, `name`, `version`, `description`, `external_id`  FROM `Type`  WHERE id IN ($0) and type_kind = $1; ",
+    "parameterNum": 2
+  },
+  "selectPropertiesByTypeId": {
+    "query": " SELECT `type_id`, `name` as `key`, `data_type` as `value`  from `TypeProperty` WHERE `type_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectArtifactsByExternalIds": {
+    "query": " SELECT `id` from `Artifact` WHERE `external_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "deleteParentContextsByParentIdAndChildIds": {
+    "query": "DELETE FROM `ParentContext` WHERE `parent_context_id` = $0 AND `context_id` IN ($1); ",
+    "parameterNum": 2
+  },
+  "selectExecutionsByExternalIds": {
+    "query": " SELECT `id` from `Execution` WHERE `external_id` IN ($0);",
+    "parameterNum": 1
+  },
+  "selectContextsByExternalIds": {
+    "query": " SELECT `id` from `Context` WHERE `external_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectTypesByExternalIds": {
+    "query": " SELECT `id`, `name`, `version`, `description`, `external_id`  FROM `Type`  WHERE external_id IN ($0) and type_kind = $1; ",
+    "parameterNum": 2
+  },
+  "selectTypesByNames": {
+    "query": " SELECT `id`, `name`, `version`, `description`,         `input_type`, `output_type` FROM `Type`  WHERE name IN ($0) AND version IS NULL AND type_kind = $1; ",
+    "parameterNum": 2
+  },
+  "selectTypesByNamesAndVersions": {
+    "query": " SELECT `id`, `name`, `version`, `description`,         `input_type`, `output_type` FROM `Type`  WHERE (name, version) IN ($0) AND type_kind = $1; ",
+    "parameterNum": 2
+  },
+  "updateType": {
+    "query": " UPDATE `Type`  SET `external_id` = $1  WHERE id = $0;",
+    "parameterNum": 2
+  },
+  "selectParentContextsByContextIds": {
+    "query": " SELECT `context_id`, `parent_context_id` From `ParentContext`  WHERE `context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectParentContextsByParentContextIds": {
+    "query": " SELECT `context_id`, `parent_context_id` From `ParentContext`  WHERE `parent_context_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "checkMlmdEnvTableExistence": {
+    "query": " SELECT (   SELECT COUNT(*)   FROM   sqlite_master   WHERE  type='table'      AND name = 'mlmdenv'      AND sql LIKE '%schema_version%'   ) = 1 ) AS table_exists;"
+  },
+  "selectAssociationsByExecutionIds": {
+    "query": " SELECT `id`, `context_id`, `execution_id`  FROM `Association`  WHERE `execution_id` IN ($0); ",
+    "parameterNum": 1
+  },
+  "selectAttributionsByArtifactIds": {
+    "query": " SELECT `id`, `context_id`, `artifact_id`  FROM `Attribution`  WHERE `artifact_id` IN ($0); ",
+    "parameterNum": 1
+  }
+}
