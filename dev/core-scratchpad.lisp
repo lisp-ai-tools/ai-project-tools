@@ -16,15 +16,6 @@
                                 (name nil name-provided-p)
                                 (description (format nil "A simple prompt: prompt-~A" prompt-text) description-provided-p)
                                 (metadata nil metadata-provided-p))
-<<<<<<< HEAD
-  (make-instance 'artifact :data prompt-text :name name :description description :metadata metadata))
-;;(defparameter *pa* (%make-prompt-artifact "foo"))
-
-(defun %make-test-child-task-node (transform-fn input-keys output-keys &key inputs)
-  (let ((execution-event (make-instance 'execution-event :input-keys input-keys
-                                                         :output-keys output-keys
-                                                         :inputs inputs)))
-=======
   (make-instance 'artifact :data prompt-text :name name
                            :description description :metadata metadata))
 ;;(defparameter *pa* (%make-prompt-artifact "foo"))
@@ -42,25 +33,10 @@
 (defun %make-test-child-task-node (transform-fn input-keys output-keys)
   (let ((execution-event (make-instance 'execution-event :input-keys input-keys
                                                          :output-keys output-keys)))
->>>>>>> f5ae9fa264d09c6bde0a270b5e3d748b8ed64000
     (make-instance 'test-child-task-node
                    :execution-event execution-event
                    :transform-fn transform-fn)))
 
-<<<<<<< HEAD
-#+(or)(defparameter *cn* (%make-test-child-task-node
-                          '%mock-prompt-transform-fn
-                          '(:llm-raw-prompt :llm-context :llm-chat-history)
-                          '(:llm-prepared-prompt)
-                          :inputs (list (%make-prompt-artifact "FOO Prompt" :name :llm-raw-prompt))))
-#+(or)(setf (inputs *cn*) (append (inputs *cn*) (%make-prompt-artifact "FOO Prompt" :name :llm-raw-prompt)))
-#+(or)(loop :for art :in (inputs (execution-event *cn*)) :collect (list (name art) art))
-
-(defmethod run ((node test-child-task-node) &rest args)
-  (let ((execution-event (execution-event node))
-        (input-plist ()))
-    (apply (transform-fn node) (input-args execution-event))))
-=======
 (defun %get-execution-args (execution-event)
   "Returns a list of (name input) pairs for each input in the execution event."
   (let ((args-plist))
@@ -82,7 +58,6 @@
     (%add-input execution-event prompt-artifact)
     (list :llm-prepared-prompt
           (%make-prepared-prompt-artifact prompt-artifact :name :llm-prepared-prompt))))
->>>>>>> f5ae9fa264d09c6bde0a270b5e3d748b8ed64000
 
 (defun %run-mock-prompt-task-node ()
   (journal:jtrace run)
