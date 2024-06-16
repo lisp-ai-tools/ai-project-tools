@@ -1,0 +1,51 @@
+#+title: Requirements
+* Good list from r/llmops
+https://www.reddit.com/r/llmops/comments/14yxfcx/need_help_choosing_llm_ops_tool_for_prompt/
+Need help choosing LLM ops tool for prompt versioning
+
+We are a fairly big group with an already mature MLops stack, but LLMOps has been pretty hard.
+
+In particular, prompt-iteration hasn't been figured out by anyone.
+what's your go to tool for PromptOps ?
+PromptOps requirement:
+
+Requirements:
+
+    Storing prompts and API to access them
+
+    Versioning and visual diffs for results
+
+    Evals to track improvement as prompts are develop .... or ability to define custom evals
+
+    Good integration with complex langchain workflows
+
+    Tracing batch evals on personal datasets, also batch evals to keep track of prompt drift
+
+    Nice feature -> project -> run -> inference call heirarchy
+
+    report generation for human evaluation of new vs old prompt results
+
+LLM Ops requirement -> orchestration
+
+    a clean way to define and visualize task vs pipeline
+
+    think of a task as as chain or a self-contained operation (think summarize, search, a langchain tool)
+
+    but then define the chaining using a low-code script -> which orchestrates these tools together
+
+    that way it is easy to trace (the pipeline serves as a highl evel view) with easy pluggability.
+
+Langchain is does some of the LLMOps stuff, but being able to use a cleaner
+abstraction on top of langchain would be nice.
+
+None of the prompt ops tools have impressed so far. They all look like really
+thin visualization diff tools or thin abstractions on top of git for version
+control.
+
+Most importantly, I DO NOT want to use their tooling to run a low code LLM
+solution. They all seem to want to build some lang-flow like UI solution. This
+isn't ScratchLLM for god's sake.
+
+Also no, I refuse to change our entire architecture to be a
+startupName.completion() call. If you need to be so intrusive, then it is not a
+good LLMOps tools. Decorators & a listerner is the most I'll agree to.

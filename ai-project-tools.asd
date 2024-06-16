@@ -32,6 +32,44 @@
                      :fiveam :run!
                      (uiop:find-symbol* :ai-project-tools/tests-suite
                                         :ai-project-tools/tests))))
+
+(asdf:defsystem #:ai-project-tools/ml-metadata
+  :description "AI Project Tools - Google ml-metadata integration"
+  :version "0.1.0"
+  :author "Joel Boehland <jboehland@gmail.com>"
+  :license "MIT"
+  :serial t
+  :defsystem-depends-on (:cl-protobufs.asdf)
+  :depends-on (#:log4cl
+               #:alexandria
+               #:serapeum
+               #:split-sequence
+               #:cl-protobufs
+               )
+  :components ((:module "ml-metadata-protobufs"
+                :serial t
+                :pathname "src/ml-metadata/"
+                :components
+                (
+                 (:protobuf-source-file "metadata-source"
+                  :proto-pathname "../../data/proto/ml_metadata/proto/metadata_source.proto"
+                  ;; :proto-search-path ("../../data/proto/")
+                  )
+                 ;; :proto-search-path ("data/proto/" "data/proto/google/protobuf/"))
+                 (:protobuf-source-file "metadata-store"
+                  :proto-pathname "../../data/proto/ml_metadata/proto/metadata_store.proto"
+                  ;; :proto-search-path ("../../data/proto/")
+                  )
+                 ;; :proto-search-path ("data/proto/" "data/proto/google/protobuf/"))
+                 (:protobuf-source-file "metadata-store-service"
+                  :proto-pathname "../../data/proto/ml_metadata/proto/metadata_store_service.proto"
+                  :proto-search-path ("../../data/proto/")
+                  ;; :proto-search-path ("data/proto/" "data/proto/google/protobuf/")
+                  )
+                ))))
+
+
+
 (asdf:defsystem #:ai-project-tools/core
   :description "AI Project Tools - Core concept classes, protocols, and utilities"
   :version "0.1.0"
@@ -88,6 +126,7 @@
                      :fiveam :run!
                      (uiop:find-symbol* :ai-project-tools/core-tests-suite
                                         :ai-project-tools/core-tests))))
+
 
 (asdf:defsystem #:ai-project-tools/app
   :description "AI Project Tools - Application scaffolding. Lifecycles, configuration and more."

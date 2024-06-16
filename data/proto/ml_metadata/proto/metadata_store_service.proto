@@ -15,7 +15,7 @@ limitations under the License.
 
 syntax = "proto2";
 
-package ml_metadata;
+package ml_metadata.proto;
 
 import "google/protobuf/field_mask.proto";
 import "ml_metadata/proto/metadata_store.proto";

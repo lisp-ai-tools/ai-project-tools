@@ -15,7 +15,7 @@ limitations under the License.
 // The returned results from a MetadataSource.
 syntax = "proto3";
 
-package ml_metadata;
+package ml_metadata.proto;
 
 import "google/protobuf/any.proto";
 
